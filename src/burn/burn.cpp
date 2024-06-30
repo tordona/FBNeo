@@ -15,14 +15,20 @@ INT32 (__cdecl *bprintf)(INT32 nStatus, TCHAR* szFormat, ...) = BurnbprintfFille
 #endif
 #endif
 
-INT32 nBurnVer = BURN_VERSION;		// Version number of the library
+INT32 nBurnVer = BURN_VERSION;	// Version number of the library
 
-UINT32 nBurnDrvCount = 0;		// Count of game drivers
-UINT32 nBurnDrvActive = ~0U;	// Which game driver is selected
-INT32 nBurnDrvSubActive = -1;	// Which sub-game driver is selected
+UINT32 nBurnDrvCount     = 0;	// Count of game drivers
+UINT32 nBurnDrvActive    = ~0U;	// Which game driver is selected
+INT32 nBurnDrvSubActive  = -1;	// Which sub-game driver is selected
 UINT32 nBurnDrvSelect[8] = { ~0U, ~0U, ~0U, ~0U, ~0U, ~0U, ~0U, ~0U }; // Which games are selected (i.e. loaded but not necessarily active)
 
 char* pszCustomNameA = NULL;
+char szBackupNameA[MAX_PATH];
+TCHAR szBackupNameW[MAX_PATH];
+
+char** szShortNamesExArray = NULL;
+TCHAR** szLongNamesExArray = NULL;
+UINT32 nNamesExArray       = 0;
 
 bool bBurnUseMMX;
 #if defined BUILD_A68K
@@ -46,31 +52,31 @@ bool bBurnUseASMCPUEmulation = false;
  clock_t starttime = 0;
 #endif
 
-UINT32 nCurrentFrame;			// Framecount for emulated game
+UINT32 nCurrentFrame;				// Framecount for emulated game
 
-UINT32 nFramesEmulated;		// Counters for FPS	display
-UINT32 nFramesRendered;		//
-bool bForce60Hz = false;
-bool bSpeedLimit60hz = true;
-double dForcedFrameRate = 60.00;
-bool bBurnUseBlend = true;
-INT32 nBurnFPS = 6000;
+UINT32 nFramesEmulated;				// Counters for FPS	display
+UINT32 nFramesRendered;
+bool bForce60Hz           = false;
+bool bSpeedLimit60hz      = true;
+double dForcedFrameRate   = 60.00;
+bool bBurnUseBlend        = true;
+INT32 nBurnFPS            = 6000;
 INT32 nBurnCPUSpeedAdjust = 0x0100;	// CPU speed adjustment (clock * nBurnCPUSpeedAdjust / 0x0100)
 
 // Burn Draw:
-UINT8* pBurnDraw = NULL;	// Pointer to correctly sized bitmap
-INT32 nBurnPitch = 0;					// Pitch between each line
+UINT8* pBurnDraw = NULL;			// Pointer to correctly sized bitmap
+INT32 nBurnPitch = 0;				// Pitch between each line
 INT32 nBurnBpp;						// Bytes per pixel (2, 3, or 4)
 
-INT32 nBurnSoundRate = 0;				// sample rate of sound or zero for no sound
-INT32 nBurnSoundLen = 0;				// length in samples per frame
+INT32 nBurnSoundRate = 0;			// sample rate of sound or zero for no sound
+INT32 nBurnSoundLen  = 0;			// length in samples per frame
 INT16* pBurnSoundOut = NULL;		// pointer to output buffer
 
-INT32 nInterpolation = 1;				// Desired interpolation level for ADPCM/PCM sound
+INT32 nInterpolation   = 1;			// Desired interpolation level for ADPCM/PCM sound
 INT32 nFMInterpolation = 0;			// Desired interpolation level for FM sound
 
-UINT8 nBurnLayer = 0xFF;	// Can be used externally to select which layers to show
-UINT8 nSpriteEnable = 0xFF;	// Can be used externally to select which layers to show
+UINT8 nBurnLayer    = 0xFF;			// Can be used externally to select which layers to show
+UINT8 nSpriteEnable = 0xFF;			// Can be used externally to select which layers to show
 
 INT32 bRunAhead = 0;
 
@@ -80,8 +86,8 @@ bool bSaveCRoms = 0;
 
 UINT32 *pBurnDrvPalette;
 
-static char** pszShortName = NULL;
-static wchar_t** pszFullName = NULL;
+static char** pszShortName = NULL, ** pszFullNameA = NULL;
+static wchar_t** pszFullNameW = NULL;
 
 bool BurnCheckMMXSupport()
 {
@@ -96,37 +102,63 @@ bool BurnCheckMMXSupport()
 #endif
 }
 
-extern "C" INT32 BurnLibInit()
-{
-	BurnLibExit();
-	nBurnDrvCount = sizeof(pDriver) / sizeof(pDriver[0]);	// count available drivers
+static void BurnGameListInit()
+{	// Avoid broken references, RomData requires separate string storage
+	if (0 == nBurnDrvCount) return;
+	
+		pszShortName = (char**   )malloc(nBurnDrvCount * sizeof(char*));
+		pszFullNameA = (char**   )malloc(nBurnDrvCount * sizeof(char*));
+		pszFullNameW = (wchar_t**)malloc(nBurnDrvCount * sizeof(wchar_t*));
 
-	// Avoid broken references, rom data requires separate string storage
-	if (nBurnDrvCount > 0) {
-		pszShortName = (char**)malloc(nBurnDrvCount * sizeof(char*));
-		pszFullName = (wchar_t**)malloc(nBurnDrvCount * sizeof(wchar_t*));
-
-		if ((NULL != pszShortName) && (NULL != pszFullName)) {
+		if ((NULL != pszShortName) && (NULL != pszFullNameA) && (NULL != pszFullNameW)) {
 			for (UINT32 i = 0; i < nBurnDrvCount; i++) {
-				pszShortName[i] = (char*)malloc(100 * sizeof(char));
-				pszFullName[i] = (wchar_t*)malloc(MAX_PATH * sizeof(wchar_t));
+				pszShortName[i] = (char*   )malloc(100      * sizeof(char));
+				pszFullNameA[i] = (char*   )malloc(MAX_PATH * sizeof(char));
+				pszFullNameW[i] = (wchar_t*)malloc(MAX_PATH * sizeof(wchar_t));
 
-				memset(pszShortName[i], '\0', 100 * sizeof(char));
-				memset(pszFullName[i], '\0', MAX_PATH * sizeof(wchar_t));
+				memset(pszShortName[i], '\0', 100      * sizeof(char));
+				memset(pszFullNameA[i], '\0', MAX_PATH * sizeof(char));
+				memset(pszFullNameW[i], '\0', MAX_PATH * sizeof(wchar_t));
 
 				if (NULL != pszShortName[i]) {
 					strcpy(pszShortName[i], pDriver[i]->szShortName);
 					pDriver[i]->szShortName = pszShortName[i];
 				}
+				if (NULL != pszFullNameA[i]) {
+					strcpy(pszFullNameA[i], pDriver[i]->szFullNameA);
+					pDriver[i]->szFullNameA = pszFullNameA[i];
+				}
 #if defined (_UNICODE)
 				if (NULL != pDriver[i]->szFullNameW) {
-					wmemcpy(pszFullName[i], pDriver[i]->szFullNameW, MAX_PATH);	// Include '\0'
+					wmemcpy(pszFullNameW[i], pDriver[i]->szFullNameW, MAX_PATH);	// Include '\0'
 				}
-				pDriver[i]->szFullNameW = pszFullName[i];
+				pDriver[i]->szFullNameW = pszFullNameW[i];
 #endif
 			}
 		}
+
+}
+
+static void BurnGameListExit()
+{
+	// Release of storage space
+	for (UINT32 i = 0; i < nBurnDrvCount; i++) {
+		if ((NULL != pszShortName) && (NULL != pszShortName[i])) free(pszShortName[i]);
+		if ((NULL != pszFullNameA) && (NULL != pszFullNameA[i])) free(pszFullNameA[i]);
+		if ((NULL != pszFullNameW) && (NULL != pszFullNameW[i])) free(pszFullNameW[i]);
 	}
+	if (NULL != pszShortName) free(pszShortName);
+	if (NULL != pszFullNameA) free(pszFullNameA);
+	if (NULL != pszFullNameW) free(pszFullNameW);
+}
+
+extern "C" INT32 BurnLibInit()
+{
+	BurnLibExit();
+
+	nBurnDrvCount = sizeof(pDriver) / sizeof(pDriver[0]);	// count available drivers
+
+	BurnGameListInit();
 
 	BurnSoundInit();
 
@@ -137,25 +169,9 @@ extern "C" INT32 BurnLibInit()
 
 extern "C" INT32 BurnLibExit()
 {
-	nBurnDrvCount = 0;
+	BurnGameListExit();
 
-	// Release of storage space
-	if (NULL != pszShortName) {
-		for (UINT32 i = 0; i < nBurnDrvCount; i++) {
-			if (NULL != pszShortName[i]) {
-				free(pszShortName[i]);
-			}
-		}
-		free(pszShortName);
-	}
-	if (NULL != pszFullName) {
-		for (UINT32 i = 0; i < nBurnDrvCount; i++) {
-			if (NULL != pszFullName[i]) {
-				free(pszFullName[i]);
-			}
-		}
-		free(pszFullName);
-	}
+	nBurnDrvCount = 0;
 
 	return 0;
 }
@@ -484,38 +500,75 @@ extern "C" char* BurnDrvGetTextA(UINT32 i)
 	}
 }
 
+static INT32 BurnDrvSetFullNameA(char* szName, UINT32 i = nBurnDrvActive)
+{
+	// Preventing the emergence of ~0U
+	// If not NULL, then FullNameA is customized
+	if ((i >= 0) && (NULL != szName)) {
+		memset(pszFullNameA[i], '\0', MAX_PATH * sizeof(char));
+		strcpy(pszFullNameA[i], szName);
+
+		return 0;
+	}
+
+	return -1;
+}
+
+INT32 BurnDrvSetFullNameW(TCHAR* szName, INT32 i = nBurnDrvActive)
+{
+	if ((-1 == i) || (NULL == szName)) return -1;
+
 #if defined (_UNICODE)
-void BurnLocalisationSetName(char *szName, TCHAR *szLongName)
+	memset(pszFullNameW[i], '\0', MAX_PATH * sizeof(wchar_t));
+	wcscpy(pszFullNameW[i], szName);
+#endif
+
+	return 0;
+}
+
+#if defined (_UNICODE)
+void BurnLocalisationSetName(char* szName, TCHAR* szLongName)
 {
 	for (UINT32 i = 0; i < nBurnDrvCount; i++) {
 		nBurnDrvActive = i;
 		if (!strcmp(szName, pDriver[i]->szShortName)) {
 //			pDriver[i]->szFullNameW = szLongName;
-			memset(pszFullName[i], '\0', MAX_PATH * sizeof(wchar_t));
-			_tcscpy(pszFullName[i], szLongName);
+			memset(pszFullNameW[i], '\0', MAX_PATH * sizeof(wchar_t));
+			_tcscpy(pszFullNameW[i], szLongName);
 		}
 	}
 }
 #endif
 
-#if defined (_UNICODE)
-void BurnLocalisationSetNameEx(char* szName, TCHAR* szLongName, INT32 nNumGames)
+static void BurnLocalisationSetNameEx()
 {
 	if (-1 == nBurnDrvSubActive) return;
 
-	char szShortNames[100] = { 0 };
+	memset(szBackupNameA, '\0', sizeof(szBackupNameA));
+	strcpy(szBackupNameA, BurnDrvGetTextA(DRV_FULLNAME));
+	BurnDrvSetFullNameA(pszCustomNameA);
+
+#if defined (_UNICODE)
+
+	const TCHAR* _str1 = _T(""), * _str2 = BurnDrvGetFullNameW(nBurnDrvActive);
+
+	if (0 != _tcscmp(_str1, _str2)) {
+		memset(szBackupNameW, _T('\0'), sizeof(szBackupNameW));
+		_tcscpy(szBackupNameW, _str2);
+	}
+
+	char szShortNames[100] = { '\0'};
+
 	sprintf(szShortNames, "%s[0x%02x]", pDriver[nBurnDrvActive]->szShortName, nBurnDrvSubActive);
 
-	for (INT32 i = 0; i < nNumGames; i++) {
-		if (0 == strcmp(szName, szShortNames)) {
-//			pDriver[nBurnDrvActive]->szFullNameW = szLongName;
-			memset(pszFullName[nBurnDrvActive], '\0', MAX_PATH * sizeof(wchar_t));
-			_tcscpy(pszFullName[nBurnDrvActive], szLongName);
+	for (INT32 nIndex = 0; nIndex < nNamesExArray; nIndex++) {
+		if (0 == strcmp(szShortNamesExArray[nIndex], szShortNames)) {
+			BurnDrvSetFullNameW(szLongNamesExArray[nIndex]);
 			return;
 		}
 	}
-}
 #endif
+}
 
 extern "C" INT32 BurnDrvGetIndex(char* szName)
 {
@@ -531,29 +584,9 @@ extern "C" INT32 BurnDrvGetIndex(char* szName)
 	return -1;
 }
 
-static void BurnDrvSetFullNameA()
-{
-	// If not NULL, then FullNameA is customized
-	if (NULL == pszCustomNameA) return;
-
-	pDriver[nBurnDrvActive]->szFullNameA = pszCustomNameA;
-}
-
 extern "C" wchar_t* BurnDrvGetFullNameW(UINT32 i)
 {
 	return pDriver[i]->szFullNameW;
-}
-
-extern "C" INT32 BurnDrvSetFullNameW(wchar_t* szName, INT32 i)
-{
-	if ((-1 == i) || (NULL == szName)) return -1;
-
-#if defined (_UNICODE)
-	memset(pszFullName[i], '\0', MAX_PATH * sizeof(wchar_t));
-	wcscpy(pszFullName[i], szName);
-#endif
-
-	return 0;
 }
 
 // Get the zip names for the driver
@@ -830,8 +863,7 @@ extern "C" INT32 BurnDrvInit()
 	nReturnValue = pDriver[nBurnDrvActive]->Init();	// Forward to drivers function
 
 	if (-1 != nBurnDrvSubActive) {
-		BurnDrvSetFullNameA();
-		BurnerDoGameListExLocalisation();
+		BurnLocalisationSetNameEx();
 	}
 
 	nMaxPlayers = pDriver[nBurnDrvActive]->Players;
@@ -882,6 +914,20 @@ extern "C" INT32 BurnDrvExit()
 	nBurnCPUSpeedAdjust = 0x0100;
 
 	pBurnDrvPalette = NULL;
+
+	if (-1 != nBurnDrvSubActive) {
+		pszCustomNameA = szBackupNameA;
+		BurnDrvSetFullNameA(szBackupNameA);
+		pszCustomNameA = NULL;
+
+#if defined (_UNICODE)
+		const wchar_t* _str1 = L"", * _str2 = BurnDrvGetFullNameW(nBurnDrvActive);
+
+		if (0 != _tcscmp(_str1, _str2)) {
+			BurnDrvSetFullNameW(szBackupNameW);
+		}
+#endif
+	}
 
 	INT32 nRet = pDriver[nBurnDrvActive]->Exit();			// Forward to drivers function
 

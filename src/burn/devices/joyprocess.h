@@ -69,10 +69,10 @@ struct ButtonToggle {
 };
 
 // E-Z HoldCoin logic (see pgm_run.cpp, d_discoboy.cpp)
-template <int N>
+template <int N, typename T = UINT8>
 struct HoldCoin {
-	UINT8 prev[N];
-	UINT8 counter[N];
+	T prev[N];
+	T counter[N];
 
 	void reset() {
 		memset(&prev, 0, sizeof(prev));
@@ -84,7 +84,7 @@ struct HoldCoin {
 		SCAN_VAR(counter);
 	}
 
-	void check(UINT8 num, UINT8 &inp, UINT8 bit, UINT8 hold_count) {
+	void check(UINT8 num, T &inp, T bit, UINT8 hold_count) {
 		if ((prev[num] & bit) != (inp & bit) && (inp & bit) && !counter[num]) {
 			counter[num] = hold_count + 1;
 		}
@@ -98,7 +98,7 @@ struct HoldCoin {
 		}
 	}
 
-	void checklow(UINT8 num, UINT8 &inp, UINT8 bit, UINT8 hold_count) {
+	void checklow(UINT8 num, T &inp, T bit, UINT8 hold_count) {
 		if ((prev[num] & bit) != (inp & bit) && (~inp & bit) && !counter[num]) {
 			counter[num] = hold_count + 1;
 		}
@@ -125,20 +125,19 @@ struct ClearOpposite {
 		SCAN_VAR(prev);
 	}
 
-	void checkval(UINT8 n, T &inp, T val) {
-		// When opposites become pressed simultaneously,
-		// remove the previously stored direction if it exists,
-		// cancel each other direction otherwise
-		if ((inp & val) == val)
-			inp &= (prev[n] ? (inp ^ prev[n]) : ~val);
+	void checkval(UINT8 n, T &inp, T val_a, T val_b) {
+		// When opposites become pressed simultaneously, and a 3rd direction isn't pressed
+		// remove the previously stored direction if it exists, cancel both otherwise
+		if ((inp & val_a) == val_a)
+			inp &= (prev[n] && (inp & val_b) == 0 ? (inp ^ prev[n]) : ~val_a);
 		// Store direction anytime it's pressed without its opposite
-		else if (inp & val)
-			prev[n] = inp & val;
+		else if (inp & val_a)
+			prev[n] = inp & val_a;
 	}
 
 	void check(UINT8 num, T &inp, T val1, T val2) {
-		checkval((num<<1)  , inp, val1);
-		checkval((num<<1)+1, inp, val2);
+		checkval((num<<1)  , inp, val1, val2);
+		checkval((num<<1)+1, inp, val2, val1);
 	}
 };
 

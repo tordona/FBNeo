@@ -27,6 +27,7 @@ static bool bAppDoFasttoggled = 0;
 static bool bAppDoRewind = 0;
 
 static int nFastSpeed = 6;
+static void DisplayFPSInit(); // forward
 
 // in FFWD, the avi-writer still needs to write all frames (skipped or not)
 #define FFWD_GHOST_FRAME 0x8000
@@ -36,7 +37,7 @@ int nSlowMo = 0;
 static int flippy = 0; // free running RunFrame() counter
 
 // For System Macros (below)
-static int prevPause = 0, prevFFWD = 0, prevFrame = 0, prevSState = 0, prevLState = 0, prevUState = 0;
+static int prevPause = 0, prevFFWD = 0, prevFrame = 0, prevSState = 0, prevLState = 0, prevNState = 0, prevPState = 0, prevUState = 0;
 UINT32 prevPause_debounce = 0;
 
 struct lua_hotkey_handler {
@@ -77,10 +78,13 @@ static void CheckSystemMacros() // These are the Pause / FFWD macros added to th
 
 	if (!kNetGame) {
 		// FFWD
+		int bPrevAppDoFast = bAppDoFast;
 		if (macroSystemFFWD) {
 			bAppDoFast = 1; prevFFWD = 1;
+			if (!bPrevAppDoFast) DisplayFPSInit(); // resync fps display
 		} else if (prevFFWD) {
 			bAppDoFast = 0; prevFFWD = 0;
+			if (bPrevAppDoFast) DisplayFPSInit(); // resync fps display
 		}
 
 		// Frame
@@ -130,6 +134,16 @@ static void CheckSystemMacros() // These are the Pause / FFWD macros added to th
 		PostMessage(hScrnWnd, WM_KEYDOWN, VK_F10, 0);
 	}
 	prevSState = macroSystemSaveState;
+	// Next State
+	if (macroSystemNextState && macroSystemNextState != prevNState) {
+		PostMessage(hScrnWnd, WM_KEYDOWN, VK_F11, 0);
+	}
+	prevNState = macroSystemNextState;
+	// Previous State
+	if (macroSystemPreviousState && macroSystemPreviousState != prevPState) {
+		PostMessage(hScrnWnd, WM_KEYDOWN, VK_F8, 0);
+	}
+	prevPState = macroSystemPreviousState;
 	// UNDO State
 	if (macroSystemUNDOState && macroSystemUNDOState != prevUState) {
 		scrnSSUndo();
@@ -168,7 +182,7 @@ static void DisplayFPS()
 {
 	const int nFPSTotal = (bAppDoFast) ? nFramesEmulated : nFramesRendered;
 
-	TCHAR fpsstring[8];
+	TCHAR fpsstring[20];
 	time_t temptime = clock();
 	double fps = (double)(nFPSTotal - nPreviousFrames) * CLOCKS_PER_SEC / (temptime - fpstimer);
 
@@ -193,6 +207,7 @@ void ToggleLayer(unsigned char thisLayer)
 void do_shonky_profile()
 {
 	bShonkyProfileMode = false; // run once!
+	pBurnDraw = NULL; //pVidImage;
 
 	const int total_frames = 5000;
 	unsigned int start_time = timeGetTime();
