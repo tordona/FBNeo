@@ -70,7 +70,17 @@ int Init_Network(void)
 #endif
 #endif // 0
 
-#ifdef BUILD_X64_EXE
+#if defined(_M_ARM64) || defined(BUILD_ARM64_EXE)
+#define	KailleraClientDll			"kailleraclient-arm64.dll"
+#define	kailleraGetVersion			"kailleraGetVersion"
+#define	kailleraInit				"kailleraInit"
+#define	kailleraShutdown			"kailleraShutdown"
+#define	kailleraSetInfos			"kailleraSetInfos"
+#define	kailleraSelectServerDialog	"kailleraSelectServerDialog"
+#define	kailleraModifyPlayValues	"kailleraModifyPlayValues"
+#define	kailleraChatSend			"kailleraChatSend"
+#define	kailleraEndGame				"kailleraEndGame"
+#elif defined(BUILD_X64_EXE)
 #define	KailleraClientDll			"kailleraclient64.dll"
 #define	kailleraGetVersion			"kailleraGetVersion"
 #define	kailleraInit				"kailleraInit"
