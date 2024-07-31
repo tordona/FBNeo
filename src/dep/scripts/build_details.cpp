@@ -13,6 +13,8 @@ int main(int /*argc*/, char** /*argv*/)
 
 #if !defined BUILD_X64_EXE
 	printf("#define BUILD_CPU  X86\n");
+#elif defined(_M_ARM64) || defined(BUILD_ARM64_EXE)
+	printf("#define BUILD_CPU  ARM64\n");
 #else
 	printf("#define BUILD_CPU  X64\n");
 #endif
