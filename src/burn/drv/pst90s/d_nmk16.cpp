@@ -2823,8 +2823,7 @@ static UINT8 __fastcall afega_main_read_byte(UINT32 address)
 			return DrvInputs[0];
 
 		case 0x080002:
-			if (1 == Dolmenk) break;
-			else return DrvInputs[1] >> 8;
+			return DrvInputs[1] >> 8;
 
 		case 0x080003:
 			return DrvInputs[1];
@@ -2855,8 +2854,7 @@ static UINT16 __fastcall afega_main_read_word(UINT32 address)
 			return DrvInputs[0];
 
 		case 0x080002:
-			if (1 == Dolmenk) break;
-			else return DrvInputs[1];
+			return (Dolmenk) ? (DrvInputs[1] & ~0x8080) : DrvInputs[1];
 
 		case 0x080004:
 			return ((DrvDips[0] << 8) | DrvDips[1]);
@@ -6122,7 +6120,7 @@ static struct BurnRomInfo emptyRomDesc[] = {
 
 static struct BurnRomInfo nmk004RomDesc[] = {
 #if !defined (ROM_VERIFY)
-	{ "nmk004.bin", 		0x002000, 0x83b6f611, BRF_PRG | BRF_BIOS },	// 0x80 tlcs90 internal rom
+	{ "nmk004.bin", 		0x002000, 0x8ae61a09, BRF_PRG | BRF_BIOS },	// 0x80 tlcs90 internal rom
 #else
 	{ "", 		0x000000, 0x00000000, BRF_PRG | BRF_BIOS },	// 0x80 tlcs90 internal rom
 #endif
@@ -8541,8 +8539,8 @@ static struct BurnRomInfo bjtwinRomDesc[] = {
 
 	{ "93087-7.bin",	0x100000, 0x8da67808, 7 | BRF_SND },           //  6 OKI2 Samples
 
-	{ "8.bpr",			0x000100, 0x633ab1c9, 0 | BRF_OPT },           //  7 Unused proms
-	{ "9.bpr",			0x000100, 0x435653a2, 0 | BRF_OPT },           //  8
+	{ "8.ic37",			0x000100, 0x633ab1c9, 0 | BRF_OPT },           //  7 Vtiming
+	{ "9.ic51",			0x000100, 0x435653a2, 0 | BRF_OPT },           //  8 Htiming
 
 	{ "nmk-215.bin",	0x002000, 0xd355a06f, 0 | BRF_OPT },           //  9 MCU
 };
@@ -8605,8 +8603,9 @@ static struct BurnRomInfo bjtwinaRomDesc[] = {
 
 	{ "93087-7.bin",	0x100000, 0x8da67808, 7 | BRF_SND },           //  6 OKI2 Samples
 
-	{ "8.bpr",			0x000100, 0x633ab1c9, 0 | BRF_OPT },           //  7 Unused proms
-	{ "9.bpr",			0x000100, 0x435653a2, 0 | BRF_OPT },           //  8
+	{ "8.ic37",			0x000100, 0x633ab1c9, 0 | BRF_OPT },           //  7 Vtiming
+
+	{ "9.ic51",			0x000100, 0x435653a2, 0 | BRF_OPT },           //  8 Htiming
 
 	{ "nmk-215.bin",	0x002000, 0xd355a06f, 0 | BRF_OPT },           //  9 MCU
 };
@@ -8645,7 +8644,11 @@ static struct BurnRomInfo bjtwinpRomDesc[] = {
 	{ "top.ic30",		0x080000, 0xab50531d, 6 | BRF_SND },           //  9
 
 	{ "top.ic27",		0x080000, 0xadb2f256, 7 | BRF_SND },           // 10 OKI2 Samples
-	{ "bottom.ic27",	0x080000, 0x6ebeb9e4, 7 | BRF_SND },           // 11 
+	{ "bottom.ic27",	0x080000, 0x6ebeb9e4, 7 | BRF_SND },           // 11
+
+	{ "8.ic37",			0x000100, 0x633ab1c9, 0 | BRF_OPT },           // 12 Vtiming
+
+	{ "9.ic51",			0x000100, 0x435653a2, 0 | BRF_OPT },           // 13 Htiming
 };
 
 STD_ROM_PICK(bjtwinp)
@@ -8714,7 +8717,11 @@ static struct BurnRomInfo bjtwinpaRomDesc[] = {
 	{ "top.ic27",		0x080000, 0xadb2f256, 7 | BRF_SND },           // 10 OKI2 Samples
 	{ "bottom.ic27",	0x080000, 0x6ebeb9e4, 7 | BRF_SND },           // 11 
 
-	{ "nmk-215.bin",	0x002000, 0xd355a06f, 0 | BRF_OPT },           // 12 MCU
+	{ "8.ic37",			0x000100, 0x633ab1c9, 0 | BRF_OPT },           // 12 Vtiming
+
+	{ "9.ic51",			0x000100, 0x435653a2, 0 | BRF_OPT },           // 13 Htiming
+
+	{ "nmk-215.bin",	0x002000, 0xd355a06f, 0 | BRF_OPT },           // 14 MCU
 };
 
 STD_ROM_PICK(bjtwinpa)
@@ -8779,7 +8786,11 @@ static struct BurnRomInfo nouryokuRomDesc[] = {
 
 	{ "ic27.7",		0x100000, 0x8a69fded, 7 | BRF_SND },           //  6 OKI2 Samples
 
-	{ "nmk-215.bin",	0x002000, 0xd355a06f, 0 | BRF_OPT },       //  7 MCU
+	{ "8.ic37",		0x000100, 0x633ab1c9, 0 | BRF_OPT },           //  7 Vtiming
+
+	{ "9.ic51",		0x000100, 0x435653a2, 0 | BRF_OPT },           //  8 Htiming
+
+	{ "nmk-215.bin",	0x002000, 0xd355a06f, 0 | BRF_OPT },       //  9 MCU
 };
 
 STD_ROM_PICK(nouryoku)
@@ -8846,7 +8857,11 @@ static struct BurnRomInfo nouryokupRomDesc[] = {
 	{ "soundpcm1.top.ic30",		0x080000, 0xa8d2abf7, 6 | BRF_SND }, // 12
 
 	{ "soundpcm2.top.ic27",		0x080000, 0x29d0a15d, 7 | BRF_SND }, // 13 OKI2 Samples
-	{ "soundpcm3.bottom.ic27",	0x080000, 0xc764e749, 7 | BRF_SND }, // 13 OKI2 Samples
+	{ "soundpcm3.bottom.ic27",	0x080000, 0xc764e749, 7 | BRF_SND }, // 14 OKI2 Samples
+
+	{ "8.ic37",		0x000100, 0x633ab1c9, 0 | BRF_OPT },           //  15 Vtiming
+
+	{ "9.ic51",		0x000100, 0x435653a2, 0 | BRF_OPT },           //  16 Htiming
 };
 
 STD_ROM_PICK(nouryokup)
@@ -10178,7 +10193,11 @@ static struct BurnRomInfo hachamfRomDesc[] = {
 
 	{ "91076-3.45",		0x080000, 0xb25ed93b, 7 | BRF_SND },           //  7 OKI2 Samples
 
-	{ "nmk-113.bin",	0x004000, 0xf3072715, 0 | BRF_OPT },           //  8 MCU
+	{ "82s135.ic50",	0x000100, 0x633ab1c9, 0 | BRF_OPT },           //  8 Vtiming
+
+	{ "82s129.ic51",	0x000100, 0xcfdbb86c, 0 | BRF_OPT },           //  9 Htiming
+
+	{ "nmk-113.bin",	0x004000, 0xf3072715, 0 | BRF_OPT },           // 10 MCU
 };
 
 STDROMPICKEXT(hachamf, hachamf, nmk004)
@@ -10266,7 +10285,11 @@ static struct BurnRomInfo hachamfaRomDesc[] = {
 
 	{ "91076-3.45",		0x080000, 0xb25ed93b, 7 | BRF_SND },           //  7 OKI2 Samples
 
-	{ "nmk-113.bin",	0x004000, 0xf3072715, 0 | BRF_OPT },           //  8 MCU
+	{ "82s135.ic50",	0x000100, 0x633ab1c9, 0 | BRF_OPT },           //  8 Vtiming
+
+	{ "82s129.ic51",	0x000100, 0xcfdbb86c, 0 | BRF_OPT },           //  9 Htiming
+
+	{ "nmk-113.bin",	0x004000, 0xf3072715, 0 | BRF_OPT },           // 10 MCU
 };
 
 STDROMPICKEXT(hachamfa, hachamfa, nmk004)
@@ -10300,6 +10323,10 @@ static struct BurnRomInfo hachamfbRomDesc[] = {
 	{ "91076-2.46",		0x080000, 0x3f1e67f2, 6 | BRF_SND },           //  6 OKI1 Samples
 
 	{ "91076-3.45",		0x080000, 0xb25ed93b, 7 | BRF_SND },           //  7 OKI2 Samples
+
+	{ "82s135.ic50",	0x000100, 0x633ab1c9, 0 | BRF_OPT },           //  8 Vtiming
+
+	{ "82s129.ic51",	0x000100, 0xcfdbb86c, 0 | BRF_OPT },           //  9 Htiming
 };
 
 STDROMPICKEXT(hachamfb, hachamfb, nmk004)
@@ -10382,8 +10409,9 @@ static struct BurnRomInfo hachamfpRomDesc[] = {
 
 	{ "kf-a1.ic1",		0x80000, 0xd945aabb, 7 | BRF_SND },           //  9 OKI2 Samples
 
-	{ "82s135.ic50",	0x00100, 0x633ab1c9, 8 | BRF_OPT },           // 10 proms
-	{ "82s129.ic51",	0x00100, 0xcfdbb86c, 8 | BRF_OPT },           // 11
+	{ "82s135.ic50",	0x000100, 0x633ab1c9, 0 | BRF_OPT },          // 10 Vtiming
+
+	{ "82s129.ic51",	0x000100, 0xcfdbb86c, 0 | BRF_OPT },          // 11 Htiming
 };
 
 STDROMPICKEXT(hachamfp, hachamfp, nmk004)

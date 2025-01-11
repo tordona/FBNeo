@@ -9,6 +9,7 @@
 #include "ay8910.h" // sgm
 #include "tms9928a.h"
 #include "burn_gun.h" // trackball (Roller & Super Action controllers)
+#include "i2ceeprom.h"
 
 static UINT8 *AllMem;
 static UINT8 *MemEnd;
@@ -42,7 +43,11 @@ static UINT32 MegaCartBank; // current Bank
 static UINT32 MegaCartBanks; // total banks
 static INT32 OCMBanks[4];
 
-static INT32 use_EEPROM = 0;
+// for use_I2C (i2c 2-wire 24c02, +)
+static INT32 d_sda;
+static INT32 d_scl;
+
+static INT32 use_I2C = 0; // i2c eeprom
 static INT32 use_SGM = 0;
 static INT32 use_SAC = 0; // 1 = SuperAction, 2 = ROLLER
 static INT32 use_OCM = 0;
@@ -284,7 +289,8 @@ void update_map()
 		ZetMapMemory(DrvCartROM + OCMBanks[3] * 0x2000, 0x8000, 0x9fff, MAP_ROM);
 		ZetMapMemory(DrvCartROM + OCMBanks[0] * 0x2000, 0xa000, 0xbfff, MAP_ROM);
 		ZetMapMemory(DrvCartROM + OCMBanks[1] * 0x2000, 0xc000, 0xdfff, MAP_ROM);
-//		ZetMapMemory(DrvCartROM + OCMBanks[2] * 0x2000, 0xe000, 0xffff, MAP_ROM);
+		// bank 2 / e000-ffff is mapped to rom or eeprom - see read handler!
+		//ZetMapMemory(DrvCartROM + OCMBanks[2] * 0x2000, 0xe000, 0xffff, MAP_ROM);
 	}
 
     if (SGM_map_24k) {
@@ -333,6 +339,11 @@ static UINT8 controller_read(INT32 port)
 
 static void __fastcall coleco_write_port(UINT16 port, UINT8 data)
 {
+#if 0
+	// debug: ignore video/joy/ay8910 writes
+	if ((port&0xfe) != 0xbe && (port&0xfe) != 0x80 &&
+	    (port&0xfe) != 0x50 && (port&0xfe) != 0xc0) bprintf(0, _T("wp  %x  %x\n"), port, data);
+#endif
 	if (use_SGM) {
         switch (port & 0xff) // SGM
         {
@@ -466,6 +477,12 @@ static INT32 DrvDoReset()
 
 	TMS9928AReset();
 
+	if (use_I2C) {
+		i2c_reset();
+		d_sda = 1;
+		d_scl = 1;
+	}
+
 	memset (DrvZ80RAM, 0xff, 0x400); // ram initialized to 0xff
 	if (!strncmp(BurnDrvGetTextA(DRV_NAME), "cv_heist", 8)) {
 		bprintf(0, _T("*** The Heist kludge..\n"));
@@ -490,36 +507,62 @@ static INT32 DrvDoReset()
 	if (use_OCM) {
 		// Penguin Adventure expects this to be mapped-in by default
 		SGM_map_24k = 1;
-		ZetOpen(0);
-		update_map();
-		ZetClose();
 	}
+
+	ZetOpen(0);
+	update_map();
+	ZetClose();
 
 	return 0;
 }
 
-static UINT8 O_EEPROM_OK = 0xff;
+static const UINT8 O_EEPROM_OK = 0xff;
 static INT32 O_EEPROM_CmdPos = 0;
 static INT32 O_EEPROM_State = 0;
+static INT32 O_EEPROM_ReadTimer = 0;
 
 enum {
 	EEP_NONE = 0 << 1,
 	EEP_INIT = 1 << 1,
 	EEP_STATUS = 2 << 1,
-	EEP_WRITE = 3 << 1
+	EEP_WRITE = 3 << 1,
+	EEP_STATUS_OK = 0xff
 };
+
+static void O_EepScan()
+{
+	SCAN_VAR(O_EEPROM_CmdPos);
+	SCAN_VAR(O_EEPROM_State);
+	SCAN_VAR(O_EEPROM_ReadTimer);
+}
 
 static void __fastcall main_write(UINT16 address, UINT8 data)
 {
 	// maybe we should support bankswitching on writes too?
-
-    if (use_EEPROM) { // for boxxle
+	//bprintf(0, _T("%x  %x\t\tfr %d  cyc %d\n"), address, data, nCurrentFrame, ZetTotalCycles());
+    if (use_I2C) { // for boxxle, black onyx, space shuttle, etc..
         switch (address)
         {
             case 0xff90:
             case 0xffa0:
             case 0xffb0:
                 MegaCartBank = (address >> 4) & 3;
+				return;
+			case 0xffc0:
+				d_scl = 0;
+				i2c_write_bit(d_sda, d_scl);
+				return;
+            case 0xffd0:
+				d_scl = 1;
+				i2c_write_bit(d_sda, d_scl);
+				return;
+            case 0xffe0:
+				d_sda = 0;
+				i2c_write_bit(d_sda, d_scl);
+				return;
+            case 0xfff0:
+				d_sda = 1;
+				i2c_write_bit(d_sda, d_scl);
 				return;
         }
 	}
@@ -562,30 +605,51 @@ static void __fastcall main_write(UINT16 address, UINT8 data)
 			}
 		}
 		switch (address) {
+			case 0xfffe:
+				O_EEPROM_ReadTimer = ((data & 0xf) == 0xf) ? 3 : 0;
+				// fallthrough! (no break)
 			case 0xfffc:
 			case 0xfffd:
-			case 0xfffe:
 			case 0xffff:
+				//bprintf(0, _T("bank %x  %x\t\tfr %d  cyc %d\n"), address, data, nCurrentFrame, ZetTotalCycles());
 				OCMBanks[address & 0x03] = data & 0xf;
 				update_map();
 				return;
 		}
 	}
 
-	bprintf(0, _T("mw %x %x\n"), address, data);
+//	bprintf(0, _T("mw %x %x\n"), address, data);
 }
+
+// OCM eeprom debug stuff left in, because I'm not fully sure on the trigger
+// for eeprom read-mode.
+//
+// *game usually sets bank 2 to 0xf when it goes into read mode.  In a few
+// instances, it'll set to 0xf then expect to read ROM instead of EEPROM.
+// The only way I can get it to work with -all- known dumps at this point
+// (goonies, knightmare, mooncresta, penguin adv, gradius), is to set up
+// a timer when 0xf is written to bank 2.  After 3 frames pass, it'll revert
+// back to ROM-read mode on e000-ffff.
+//                                                     - dink, july 12, 2024
 
 static UINT8 __fastcall main_read(UINT16 address)
 {
 	if (use_OCM && address >= 0xe000 && address <= 0xffff) {
-		if (address == 0xe000 && O_EEPROM_State == EEP_STATUS) {
-			return O_EEPROM_OK;
+		if ((address & 0x0fff) == 0x0000 && O_EEPROM_State == EEP_STATUS) {
+			//bprintf(0, _T("eeprom_ok\n"));
+			return EEP_STATUS_OK;
 		}
-		if (OCMBanks[2] == 0xf && (address & 0x1fff) < 0x3ff) {
+		if (/*OCMBanks[2] == 0xf*/ O_EEPROM_ReadTimer > 0) {// && (address & 0x1fff) < 0x3ff) {
+//			bprintf(0, _T("eeprom_read %x\t\tfr: %d\n"), address, nCurrentFrame);
 			return DrvEEPROM[address & 0x3ff];
 		} else {
-			return DrvCartROM[(OCMBanks[2] * 0x2000) + (address - 0xe000)];
+//			bprintf(0, _T("rom_read %x\t\tfr: %d\n"), address, nCurrentFrame);
+			return DrvCartROM[(OCMBanks[2] * 0x2000) + (address & 0x1fff)];
 		}
+	}
+
+	if (use_I2C && address == 0xff80) {
+		return DrvCartROM[i2c_read() ? 0xff80 : 0xbf80];
 	}
 
 	if (address >= 0xffc0/* && address <= 0xffff*/) {
@@ -661,10 +725,11 @@ static INT32 DrvInit()
 		ZetMapMemory(DrvZ80RAM, i + 0x0000, i + 0x03ff, MAP_RAM);
 	}
 
-    if (use_EEPROM) {  // similar to MegaCart but with diff. mapper addresses
+    if (use_I2C) {  // similar to MegaCart but with diff. mapper addresses
 		// Boxxle
 		MegaCartBanks = MegaCart / 0x4000;
 		bprintf(0, _T("ColecoVision BoxxleCart mapping.\n"));
+		i2c_init((use_I2C == 1) ? I2C_24C02 : I2C_24C256);
 		ZetMapMemory(DrvCartROM, 0x8000, 0xbfff, MAP_ROM);
 		ZetSetReadHandler(main_read);
         ZetSetWriteHandler(main_write);
@@ -742,10 +807,16 @@ static INT32 DrvInitSGM() // w/SGM
     return DrvInit();
 }
 
-static INT32 DrvInitEEPROM() // w/EEPROM (boxxle)
+static INT32 DrvInitI2CBoxxle() // w/EEPROM (boxxle)
 {
-    // 24cXX e2prom isn't actually supported, but the game works fine (minus highscore saving)
-    use_EEPROM = 1;
+    use_I2C = 2;
+
+    return DrvInit();
+}
+
+static INT32 DrvInitI2C() // w/EEPROM (boxxle)
+{
+    use_I2C = 1;
 
     return DrvInit();
 }
@@ -769,8 +840,12 @@ static INT32 DrvExit()
 
 	BurnTrackballExit();
 
+	if (use_I2C) {
+		i2c_exit();
+	}
+
     use_SGM = 0;
-    use_EEPROM = 0;
+    use_I2C = 0;
 	use_SAC = 0;
 	use_OCM = 0;
 
@@ -823,6 +898,8 @@ static INT32 DrvFrame()
 	if (DrvReset) {
 		DrvDoReset();
 	}
+
+	if (O_EEPROM_ReadTimer > 0) O_EEPROM_ReadTimer--; // eeprom read timer, good for 2-3 frames(?)
 
 	{
 		memset (DrvInputs, 0xff, 4 * sizeof(UINT16));
@@ -910,6 +987,7 @@ static INT32 DrvScan(INT32 nAction, INT32 *pnMin)
 
 		if (use_OCM) {
 			SCAN_VAR(OCMBanks);
+			O_EepScan();
 		}
 
 		if (use_SAC) {
@@ -924,11 +1002,19 @@ static INT32 DrvScan(INT32 nAction, INT32 *pnMin)
 		SCAN_VAR(last_state);
         SCAN_VAR(MegaCartBank);
         SCAN_VAR(SGM_map_24k);
-        SCAN_VAR(SGM_map_8k);
+		SCAN_VAR(SGM_map_8k);
+		if (use_I2C) {
+			SCAN_VAR(d_scl);
+			SCAN_VAR(d_sda);
+		}
 	}
 
 	if (nAction & ACB_NVRAM && use_OCM) {
 		ScanVar(DrvEEPROM, 0x400, "NV RAM");
+	}
+
+	if (use_I2C) {
+		i2c_scan(nAction, pnMin);
 	}
 
 	if (nAction & ACB_WRITE) {
@@ -5719,6 +5805,25 @@ struct BurnDriver BurnDrvcv_astorm = {
 	272, 228, 4, 3
 };
 
+// Aztec Challenge (HB)
+
+static struct BurnRomInfo cv_AztecchalRomDesc[] = {
+	{ "Aztec Challenge (2024)(Dragonfly Amusement).rom", 32768, 0xb931416a, BRF_ESS | BRF_PRG },
+};
+
+STDROMPICKEXT(cv_Aztecchal, cv_Aztecchal, cv_coleco)
+STD_ROM_FN(cv_Aztecchal)
+
+struct BurnDriver BurnDrvcv_Aztecchal = {
+	"cv_aztecchal", NULL, "cv_coleco", NULL, "2024",
+	"Aztec Challenge (HB)\0", NULL, "Dragonfly Amusement", "ColecoVision",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_HOMEBREW, 1, HARDWARE_COLECO, GBF_ACTION, 0,
+	CVGetZipName, cv_AztecchalRomInfo, cv_AztecchalRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
+	DrvInit, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
+	272, 228, 4, 3
+};
+
 // Bagman (HB)
 
 static struct BurnRomInfo cv_bagmanRomDesc[] = {
@@ -5848,7 +5953,7 @@ struct BurnDriver BurnDrvcv_blackonyx = {
     NULL, NULL, NULL, NULL,
     BDF_GAME_WORKING | BDF_HOMEBREW, 1, HARDWARE_COLECO, GBF_RPG | GBF_MAZE, 0,
     CVGetZipName, cv_blackonyxRomInfo, cv_blackonyxRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
-    DrvInitEEPROM, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
+    DrvInitI2C, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
     272, 228, 4, 3
 };
 
@@ -6000,7 +6105,7 @@ struct BurnDriver BurnDrvcv_boxxle = {
 	NULL, NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_HOMEBREW, 1, HARDWARE_COLECO, GBF_PUZZLE, 0,
 	CVGetZipName, cv_boxxleRomInfo, cv_boxxleRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
-	DrvInitEEPROM, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
+	DrvInitI2CBoxxle, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
 	272, 228, 4, 3
 };
 
@@ -7201,6 +7306,25 @@ struct BurnDriver BurnDrvcv_gauntlet = {
     272, 228, 4, 3
 };
 
+// Ghost (SGM) (HB)
+
+static struct BurnRomInfo cv_ghostRomDesc[] = {
+    { "Ghost SGM (2019)(Unepic Fran).rom",	131072, 0xd55bbb66, BRF_PRG | BRF_ESS },
+};
+
+STDROMPICKEXT(cv_ghost, cv_ghost, cv_coleco)
+STD_ROM_FN(cv_ghost)
+
+struct BurnDriver BurnDrvcv_ghost= {
+    "cv_ghost", NULL, "cv_coleco", NULL, "2019",
+    "Ghost (SGM) (HB)\0", "SGM - Super Game Module", "Unepic Fran", "ColecoVision",
+    NULL, NULL, NULL, NULL,
+    BDF_GAME_WORKING | BDF_HOMEBREW, 1, HARDWARE_COLECO, GBF_PLATFORM, 0,
+    CVGetZipName, cv_ghostRomInfo, cv_ghostRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
+    DrvInitSGM, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
+    272, 228, 4, 3
+};
+
 // Ghost Blaster (HB)
 
 static struct BurnRomInfo cv_gblasterRomDesc[] = {
@@ -7315,23 +7439,42 @@ struct BurnDriver BurnDrvcv_golgo13 = {
     272, 228, 4, 3
 };
 
-// Goonies, the (SGM) (HB)
+// Goonies, The (Team Pixelboy) (SGM) (HB)
 
 static struct BurnRomInfo cv_gooniesRomDesc[] = {
-    { "Goonies SGM (2012)(Team Pixelboy).rom",	0x20000, 0x01581fa8, BRF_PRG | BRF_ESS },
+    { "Goonies, The - SGM (2012)(Team Pixelboy).rom",	0x20000, 0x01581fa8, BRF_PRG | BRF_ESS },
 };
 
 STDROMPICKEXT(cv_goonies, cv_goonies, cv_coleco)
 STD_ROM_FN(cv_goonies)
 
 struct BurnDriver BurnDrvcv_goonies = {
-    "cv_goonies", NULL, "cv_coleco", NULL, "1986-2012",
-    "Goonies (SGM) (HB)\0", "SGM - Published by Team Pixelboy", "Konami", "ColecoVision",
+    "cv_goonies", "cv_gooniesoc", "cv_coleco", NULL, "1986-2012",
+    "Goonies, The (Team Pixelboy) (SGM) (HB)\0", "SGM - Published by Team Pixelboy", "Konami", "ColecoVision",
     NULL, NULL, NULL, NULL,
-    BDF_GAME_WORKING | BDF_HOMEBREW, 2, HARDWARE_COLECO, GBF_PLATFORM, 0,
+    BDF_GAME_WORKING | BDF_CLONE | BDF_HOMEBREW, 1, HARDWARE_COLECO, GBF_PLATFORM, 0,
     CVGetZipName, cv_gooniesRomInfo, cv_gooniesRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
     DrvInitSGM, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
     272, 228, 4, 3
+};
+
+// Goonies, The (Opcode) (SGM) (HB)
+
+static struct BurnRomInfo cv_GooniesocRomDesc[] = {
+	{ "Goonies, The - SGM (2023)(Opcode Games).rom", 131072, 0x6C8113C1, BRF_ESS | BRF_PRG },
+};
+
+STDROMPICKEXT(cv_Gooniesoc, cv_Gooniesoc, cv_coleco)
+STD_ROM_FN(cv_Gooniesoc)
+
+struct BurnDriver BurnDrvcv_Gooniesoc = {
+	"cv_gooniesoc", NULL, "cv_coleco", NULL, "1986-2023",
+	"Goonies, The (Opcode) (SGM) (HB)\0", "SGM - Super Game Module", "Opcode Games - Konami", "ColecoVision",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_HOMEBREW, 1, HARDWARE_COLECO, GBF_PLATFORM, 0,
+	CVGetZipName, cv_GooniesocRomInfo, cv_GooniesocRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
+	DrvInitOCM, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
+	272, 228, 4, 3
 };
 
 // GP World (HB)
@@ -7356,7 +7499,7 @@ struct BurnDriver BurnDrvcv_gpworld = {
 // Gradius (SGM) (HB)
 
 static struct BurnRomInfo cv_GradiusRomDesc[] = {
-	{ "Gradius SGM (2016)(Opcode Games).rom", 131072, 0x30d337e4, BRF_ESS | BRF_PRG },
+	{ "Gradius - SGM (2016)(Opcode Games).rom", 131072, 0x30d337e4, BRF_ESS | BRF_PRG },
 };
 
 STDROMPICKEXT(cv_Gradius, cv_Gradius, cv_coleco)
@@ -7364,10 +7507,29 @@ STD_ROM_FN(cv_Gradius)
 
 struct BurnDriver BurnDrvcv_Gradius = {
 	"cv_gradius", NULL, "cv_coleco", NULL, "1986-2016",
-	"Gradius (SGM) (HB)\0", NULL, "Opcode Games - Konami", "ColecoVision",
+	"Gradius (SGM) (HB)\0", "SGM - Super Game Module", "Opcode Games - Konami", "ColecoVision",
 	NULL, NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_HOMEBREW, 2, HARDWARE_COLECO, GBF_HORSHOOT, 0,
 	CVGetZipName, cv_GradiusRomInfo, cv_GradiusRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
+	DrvInitOCM, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
+	272, 228, 4, 3
+};
+
+// Gradius (SGM) (HB, Alt)
+
+static struct BurnRomInfo cv_GradiusaRomDesc[] = {
+	{ "Gradius - SGM (Alt)(2016)(Opcode Games).rom", 131072, 0x2426C300, BRF_ESS | BRF_PRG },
+};
+
+STDROMPICKEXT(cv_Gradiusa, cv_Gradiusa, cv_coleco)
+STD_ROM_FN(cv_Gradiusa)
+
+struct BurnDriver BurnDrvcv_Gradiusa = {
+	"cv_gradiusa", "cv_gradius", "cv_coleco", NULL, "1986-2016",
+	"Gradius (SGM) (HB, Alt)\0", "SGM - Super Game Module", "Opcode Games - Konami", "ColecoVision",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_CLONE | BDF_HOMEBREW, 2, HARDWARE_COLECO, GBF_HORSHOOT, 0,
+	CVGetZipName, cv_GradiusaRomInfo, cv_GradiusaRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
 	DrvInitOCM, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
 	272, 228, 4, 3
 };
@@ -7904,23 +8066,42 @@ struct BurnDriver BurnDrvcv_kngtlore = {
     272, 228, 4, 3
 };
 
-// Knightmare (SGM) (HB)
+// Knightmare (Team Pixelboy) (SGM) (HB)
 
 static struct BurnRomInfo cv_kngtmareRomDesc[] = {
-    { "Knightmare SGM (fix)(2015)(Team Pixelboy).rom",	0x20000, 0x01cacd0d, BRF_PRG | BRF_ESS },
+    { "Knightmare - SGM (fix)(2015)(Team Pixelboy).rom",	0x20000, 0x01cacd0d, BRF_PRG | BRF_ESS },
 };
 
 STDROMPICKEXT(cv_kngtmare, cv_kngtmare, cv_coleco)
 STD_ROM_FN(cv_kngtmare)
 
 struct BurnDriver BurnDrvcv_kngtmare = {
-    "cv_kngtmare", NULL, "cv_coleco", NULL, "1986-2015",
-    "Knightmare (SGM) (HB)\0", "SGM - Published by Team Pixelboy", "Konami", "ColecoVision",
+    "cv_kngtmare", "cv_kngtmareoc", "cv_coleco", NULL, "1986-2015",
+    "Knightmare (Team Pixelboy) (SGM) (HB)\0", "SGM - Published by Team Pixelboy", "Konami", "ColecoVision",
     NULL, NULL, NULL, NULL,
-    BDF_GAME_WORKING | BDF_HOMEBREW, 1, HARDWARE_COLECO, GBF_VERSHOOT, 0,
+    BDF_GAME_WORKING | BDF_CLONE | BDF_HOMEBREW, 1, HARDWARE_COLECO, GBF_VERSHOOT, 0,
     CVGetZipName, cv_kngtmareRomInfo, cv_kngtmareRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
     DrvInitSGM, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
     272, 228, 4, 3
+};
+
+// Knightmare (Opcode) (SGM)
+
+static struct BurnRomInfo cv_KngtmareocRomDesc[] = {
+	{ "Knightmare - SGM (2023)(Opcode Games).rom", 131072, 0x80586CC5, BRF_ESS | BRF_PRG },
+};
+
+STDROMPICKEXT(cv_Kngtmareoc, cv_Kngtmareoc, cv_coleco)
+STD_ROM_FN(cv_Kngtmareoc)
+
+struct BurnDriver BurnDrvcv_Kngtmareoc = {
+	"cv_kngtmareoc", NULL, "cv_coleco", NULL, "1986-2023",
+	"Knightmare (Opcode) (SGM)\0", "SGM - Super Game Module", "Opcode Games - Konami", "ColecoVision",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_HOMEBREW, 1, HARDWARE_COLECO, GBF_VERSHOOT, 0,
+	CVGetZipName, cv_KngtmareocRomInfo, cv_KngtmareocRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
+	DrvInitOCM, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
+	272, 228, 4, 3
 };
 
 // Knight'n More (HB)
@@ -8128,6 +8309,25 @@ struct BurnDriver BurnDrvcv_loderunner = {
 	NULL, NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_HOMEBREW, 1, HARDWARE_COLECO, GBF_PLATFORM, 0,
 	CVGetZipName, cv_loderunnerRomInfo, cv_loderunnerRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
+	DrvInit, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
+	272, 228, 4, 3
+};
+
+// Lode Runner 2013 (HB)
+
+static struct BurnRomInfo cv_loder2013RomDesc[] = {
+	{ "Lode Runner (2013)(Collectorvision).rom",	32438, 0xd679ac52, BRF_PRG | BRF_ESS },
+};
+
+STDROMPICKEXT(cv_loder2013, cv_loder2013, cv_coleco)
+STD_ROM_FN(cv_loder2013)
+
+struct BurnDriver BurnDrvcv_loder2013 = {
+	"cv_loder2013", NULL, "cv_coleco", NULL, "2012-13",
+	"Lode Runner 2013 (HB)\0", NULL, "Collectorvision", "ColecoVision",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_HOMEBREW, 1, HARDWARE_COLECO, GBF_PLATFORM, 0,
+	CVGetZipName, cv_loder2013RomInfo, cv_loder2013RomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
 	DrvInit, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
 	272, 228, 4, 3
 };
@@ -8512,6 +8712,25 @@ struct BurnDriver BurnDrvcv_monsthouse = {
     272, 228, 4, 3
 };
 
+// Mooncresta (SGM) (HB)
+
+static struct BurnRomInfo cv_MooncrestaRomDesc[] = {
+	{ "Mooncresta - SGM (2023)(Opcode Games).rom", 131072, 0xBDAE4248, BRF_ESS | BRF_PRG },
+};
+
+STDROMPICKEXT(cv_Mooncresta, cv_Mooncresta, cv_coleco)
+STD_ROM_FN(cv_Mooncresta)
+
+struct BurnDriver BurnDrvcv_Mooncresta = {
+	"cv_mooncresta", NULL, "cv_coleco", NULL, "1980-2023",
+	"Mooncresta (SGM) (HB)\0", "SGM - Super Game Module", "Opcode Games - Nichibutsu", "ColecoVision",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_HOMEBREW, 1, HARDWARE_COLECO, GBF_VERSHOOT, 0,
+	CVGetZipName, cv_MooncrestaRomInfo, cv_MooncrestaRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
+	DrvInitOCM, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
+	272, 228, 4, 3
+};
+
 // Mopiranger (HB)
 
 static struct BurnRomInfo cv_mopirangRomDesc[] = {
@@ -8534,15 +8753,15 @@ struct BurnDriver BurnDrvcv_mopirang = {
 // Mr. Chin (HB)
 
 static struct BurnRomInfo cv_mrchinRomDesc[] = {
-	{ "Mr. Chin (2008) (Collectorvision Games).col",	32768, 0x9ab11795, BRF_PRG | BRF_ESS },
+	{ "Mr. Chin (2008)(Collectorvision Games).col",	32768, 0x9ab11795, BRF_PRG | BRF_ESS },
 };
 
 STDROMPICKEXT(cv_mrchin, cv_mrchin, cv_coleco)
 STD_ROM_FN(cv_mrchin)
 
 struct BurnDriver BurnDrvcv_mrchin = {
-	"cv_mrchin", NULL, "cv_coleco", NULL, "2008",
-	"Mr. Chin (HB)\0", NULL, "CollectorVision Games", "ColecoVision",
+	"cv_mrchin", NULL, "cv_coleco", NULL, "1984-2008",
+	"Mr. Chin (HB)\0", "Published by CollectorVision Games", "HAL Laboratory", "ColecoVision",
 	NULL, NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_HOMEBREW, 2, HARDWARE_COLECO, GBF_ACTION, 0,
 	CVGetZipName, cv_mrchinRomInfo, cv_mrchinRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
@@ -8567,6 +8786,25 @@ struct BurnDriver BurnDrvcv_mrdorunrun = {
     CVGetZipName, cv_mrdorunrunRomInfo, cv_mrdorunrunRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
     DrvInitSGM, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
     272, 228, 4, 3
+};
+
+// Mr. Do's Wild Ride (HB)
+
+static struct BurnRomInfo cv_mrdowrRomDesc[] = {
+	{ "Mr. Do's Wild Ride (2021)(CollectorVision).rom",	131072, 0xd3ea5876, BRF_PRG | BRF_ESS },
+};
+
+STDROMPICKEXT(cv_mrdowr, cv_mrdowr, cv_coleco)
+STD_ROM_FN(cv_mrdowr)
+
+struct BurnDriver BurnDrvcv_mrdowr = {
+	"cv_mrdowr", NULL, "cv_coleco", NULL, "1984-2021",
+	"Mr. Do's Wild Ride (HB)\0", "Published by CollectorVision Games", "Universal", "ColecoVision",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_HOMEBREW, 2, HARDWARE_COLECO, GBF_ACTION, 0,
+	CVGetZipName, cv_mrdowrRomInfo, cv_mrdowrRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
+	DrvInit, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
+	272, 228, 4, 3
 };
 
 // Ms. Space Fury (HB)
@@ -9815,7 +10053,7 @@ STD_ROM_FN(cv_spaceshuttle)
 
 static INT32 DrvInitSGMEEPROM() // Space Shuttle
 {
-    use_EEPROM = 1;
+    use_I2C = 1;
     use_SGM = 1;
     return DrvInit();
 }
@@ -10429,6 +10667,25 @@ struct BurnDriver BurnDrvcv_thexder = {
     272, 228, 4, 3
 };
 
+// Time Pilot (SGM) (HB)
+
+static struct BurnRomInfo cv_TimePilotRomDesc[] = {
+	{ "Time Pilot - SGM (2024)(Opcode Games).rom", 131072, 0xCF803DDC, BRF_ESS | BRF_PRG },
+};
+
+STDROMPICKEXT(cv_TimePilot, cv_TimePilot, cv_coleco)
+STD_ROM_FN(cv_TimePilot)
+
+struct BurnDriver BurnDrvcv_TimePilot = {
+	"cv_timepilot", NULL, "cv_coleco", NULL, "1982-2024",
+	"Time Pilot (SGM) (HB)\0", "SGM - Super Game Module", "Opcode Games - Konami", "ColecoVision",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_HOMEBREW, 2, HARDWARE_COLECO, GBF_SHOOT, 0,
+	CVGetZipName, cv_TimePilotRomInfo, cv_TimePilotRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
+	DrvInitOCM, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
+	272, 228, 4, 3
+};
+
 // Track & Field (HB)
 
 static struct BurnRomInfo cv_trackfldRomDesc[] = {
@@ -11037,5 +11294,24 @@ struct BurnDriver BurnDrvcv_zoom909 = {
 	CVGetZipName, cv_zoom909RomInfo, cv_zoom909RomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
 	DrvInit, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
 	272, 228, 4, 3
+};
+
+// Yie Ar Kung Fu II (SGM) (HB)
+
+static struct BurnRomInfo cv_yieariiRomDesc[] = {
+    { "Yie Ar Kung Fu II SGM (2018)(Opcode Games).rom",	131072, 0x3143c6dd, BRF_PRG | BRF_ESS },
+};
+
+STDROMPICKEXT(cv_yiearii, cv_yiearii, cv_coleco)
+STD_ROM_FN(cv_yiearii)
+
+struct BurnDriver BurnDrvcv_yiearii = {
+    "cv_yiearii", NULL, "cv_coleco", NULL, "1985-2018",
+    "Yie Ar Kung Fu II (SGM) (HB)\0", "Resets randomly, SGM - Super Game Module", "Opcode Games - Konami", "ColecoVision",
+    NULL, NULL, NULL, NULL,
+    BDF_GAME_NOT_WORKING | BDF_HOMEBREW, 2, HARDWARE_COLECO, GBF_SCRFIGHT | GBF_VSFIGHT, 0,
+    CVGetZipName, cv_yieariiRomInfo, cv_yieariiRomName, NULL, NULL, NULL, NULL, ColecoInputInfo, ColecoDIPInfo,
+    DrvInitSGM, DrvExit, DrvFrame, TMS9928ADraw, DrvScan, NULL, TMS9928A_PALETTE_SIZE,
+    272, 228, 4, 3
 };
 
