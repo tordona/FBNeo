@@ -71,7 +71,7 @@ int Init_Network(void)
 #endif // 0
 
 #if defined(_M_ARM64) || defined(BUILD_ARM64_EXE)
-#define	KailleraClientDll			"kailleraclient-arm64.dll"
+#define	KailleraClientDll			"kailleraclient_arm64.dll"
 #define	kailleraGetVersion			"kailleraGetVersion"
 #define	kailleraInit				"kailleraInit"
 #define	kailleraShutdown			"kailleraShutdown"
