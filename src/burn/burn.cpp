@@ -6,6 +6,10 @@
 //#include "burn_sound.h" // included in burnint.h
 #include "driverlist.h"
 
+#ifdef BUILD_WIN32
+#include "mbtwc.h"
+#endif
+
 #ifndef __LIBRETRO__
 // filler function, used if the application is not printing debug messages
 static INT32 __cdecl BurnbprintfFiller(INT32, TCHAR* , ...) { return 0; }
@@ -456,9 +460,20 @@ extern "C" TCHAR* BurnDrvGetText(UINT32 i)
 	}
 
 	if (pszStringW && pszStringA && pszStringA[0]) {
-		if (mbstowcs(pszStringW, pszStringA, 256) != -1U) {
-			return pszStringW;
+#ifdef BUILD_WIN32
+		// CP_UTF8 65001
+		const int n = _MultiByteToWideChar(65001, 0, pszStringA, -1, NULL, 0);
+		if (0 == n)
+			return NULL;
+
+		if (0 == _MultiByteToWideChar(65001, 0, pszStringA, -1, pszStringW, n))
+			return NULL;
+#else
+		if (mbstowcs(pszStringW, pszStringA, 256) == -1U) {
+			return NULL;
 		}
+#endif
+		return pszStringW;
 	}
 
 #else
@@ -1296,7 +1311,7 @@ enum {
 };
 
 struct RewindIndex {
-	INT32 pos;			// data position in RewindBuffer
+	INT64 pos;			// data position in RewindBuffer
 	INT32 len;			// total buffer length (state + extra data)
 	INT32 state_len;	// buffer length of just state data
 	INT32 this_frame;	// frame # (for input recording sync)
@@ -1307,8 +1322,8 @@ struct RewindIndex {
 };
 
 INT32 bRewindEnabled	= 0;		// for UI Integration
-INT32 nRewindMemory		= 1024;		// for UI
-static INT32 nRewindTotalAllocated;
+INT64 nRewindMemory		= 1024;		// for UI
+static INT64 nRewindTotalAllocated;
 static INT32 bRewindStatus;			  // ref. enum above
 static INT32 bRewindCancelLatch;
 static INT32 bRewindSingleStepping;
@@ -1397,8 +1412,9 @@ static INT32 StateRewindGetSize()
 extern int nReplayStatus;
 extern UINT32 nStartFrame;
 extern INT32 nReplayUndoCount;
-int FreezeInput(unsigned char** buf, int* size);
-int UnfreezeInput(const unsigned char* buf, int size);
+INT32 FreezeInputSize();
+INT32 FreezeInput(UINT8** buf, INT32* size);
+INT32 UnfreezeInput(const UINT8* buf, INT32 size);
 #include "inputbuf.h"
 
 // interface.h
@@ -1459,13 +1475,13 @@ static void StateRewindFrame() // called once per frame (see burner/win32/run.cp
 			if (!RewindBuffer) {
 				if (nRewindTotalAllocated <= 128 * 1024 * 1024) break; // going to be too low to do anything decent!
 				// re-try allocation w/smaller amount.
-				bprintf(0, _T("*** Rewind init-notice: allocation failed (%dMB). retrying with %dMB\n"), nRewindTotalAllocated / (1024 * 1024), (nRewindTotalAllocated / (1024 * 1024)) - 128);
+				bprintf(0, _T("*** Rewind init-notice: allocation failed (%dMB). retrying with %dMB\n"), (int)(nRewindTotalAllocated / (1024 * 1024)), (int)((nRewindTotalAllocated / (1024 * 1024)) - 128));
 				nRewindTotalAllocated -= 128 * 1024 * 1024;
 			}
 		} while (RewindBuffer == NULL);
 
 		if (!RewindBuffer) {
-			bprintf(PRINT_ERROR, _T("*** Rewind init-error: allocation failed. size %dMB\n"), nRewindTotalAllocated / (1024 * 1024));
+			bprintf(PRINT_ERROR, _T("*** Rewind init-error: allocation failed. size %dMB\n"), (int)(nRewindTotalAllocated / (1024 * 1024)));
 			goto superfail;
 		}
 
@@ -1496,7 +1512,7 @@ static void StateRewindFrame() // called once per frame (see burner/win32/run.cp
 
 		switch (bRewindStatus) {
 			case REWINDSTATUS_OK:
-				bprintf(0, _T(" ** Rewind initted, %dMB allocated, state size $%x @ ~%d rewinds.\n"), nRewindTotalAllocated / (1024 * 1024), nTotalLenRewind, nRewindIndexCount);
+				bprintf(0, _T(" ** Rewind initted, %dMB allocated, state size $%x @ ~%d rewinds.\n"), (int)(nRewindTotalAllocated / (1024 * 1024)), nTotalLenRewind, nRewindIndexCount);
 				break;
 			case REWINDSTATUS_BROKEN:
 				bprintf(0, _T(" ** Rewind init failed, disabled for this session\n"));
@@ -1505,15 +1521,20 @@ static void StateRewindFrame() // called once per frame (see burner/win32/run.cp
 		}
 	}
 
-	if (nRewindFrames > 0 && (pRewindIndex[nRewindFrames-1].pos + pRewindIndex[nRewindFrames-1].len*2) >=
-		nRewindTotalAllocated) {
+	INT32 nStateSize = StateRewindGetSize();
 
-		thready.notify(); // runs StateRewind_Repack() in a thread
+	if (nRewindFrames > 0 && (pRewindIndex[nRewindFrames-1].pos + pRewindIndex[nRewindFrames-1].len + nStateSize + 1024 + // the 1024 is a safety net
+		((nReplayStatus != 0) ? (4 + inputbuf_freezer_size() + 4 + FreezeInputSize()) : 0) ) >=	nRewindTotalAllocated) {
+
+		// if we've run out of rewind memory, it's time for a culling. We do this in a thread,
+		// so emulation can continue.
+
+		thready.notify(); // (trigger StateRewind_Repack() via thread)
 
 	} else {
 		// Add this frame to rewind
 		pRewindIndex[nRewindFrames].len =
-		pRewindIndex[nRewindFrames].state_len =	StateRewindGetSize();
+		pRewindIndex[nRewindFrames].state_len = nStateSize;
 
 		pRewindIndex[nRewindFrames].pos = (nRewindFrames == 0) ? 0 :
 			(pRewindIndex[nRewindFrames-1].pos + pRewindIndex[nRewindFrames-1].len);
@@ -1603,7 +1624,7 @@ static void StateRewindLoad()
 			// huh?  When we run out of rewind memory, the entries get packed
 			// by deleting every other entry thus freeing up space for future
 			// rewind entries.  If we don't do this, they will play back way
-			// too fast!
+			// too fast! (compared to freshly added rewind entries)
 			if (pRewindIndex[nRewindFrames].gran_counter >= (pRewindIndex[nRewindFrames].granulated)) {
 				pRewindIndex[nRewindFrames].gran_counter = 0;
 				nRewindFrames--;

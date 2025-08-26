@@ -39,7 +39,7 @@ static INT32 soundlatch[2];
 static INT32 nmi_pending;
 static INT32 nmi_enable;
 
-static INT32 coin_flip = 0;
+static INT32 is_game = 0;
 static INT32 spot_data;
 
 static UINT8 DrvJoy1[8];
@@ -303,7 +303,7 @@ static void __fastcall nycaptor_main_write(UINT16 address, UINT8 data)
 
 		case 0xd002:
 			generic_control_reg = data;
-			if ((BurnDrvGetFlags() & BDF_BOOTLEG) || coin_flip != 0) {
+			if ((BurnDrvGetFlags() & BDF_BOOTLEG) || is_game != 0) {
 				set_rombank((data >> 2) & 3); // cyclshtg, bronx
 			} else {
 				set_rombank((data >> 3) & 1); // nycaptor, colt
@@ -629,7 +629,7 @@ static INT32 DrvInit(INT32 game_select)
 
 		if (BurnLoadRom(DrvMCUROM    + 0x00000, k++, 1)) return 1;
 
-		coin_flip = 0x00;
+		is_game = 0x00;
 	}
 
 	if (game_select == 1) // colt
@@ -658,7 +658,7 @@ static INT32 DrvInit(INT32 game_select)
 
 		DrvPrgDecode();
 
-		coin_flip = 0x00;
+		is_game = 0x00;
 	}
 
 	if (game_select == 2) // bronx
@@ -687,7 +687,7 @@ static INT32 DrvInit(INT32 game_select)
 
 		DrvPrgDecode();
 
-		coin_flip = 0x30;
+		is_game = 0x30;
 	}
 
 	if (game_select == 3) // cyclesht
@@ -716,7 +716,7 @@ static INT32 DrvInit(INT32 game_select)
 
 		//if (BurnLoadRom(DrvMCUROM    + 0x00000, k++, 1)) return 1;
 
-		coin_flip = 0x30;
+		is_game = 0x30;
 
 		return 1; // unsupported for now
 	}
@@ -806,7 +806,7 @@ static INT32 DrvExit()
 
 	BurnFreeMemIndex();
 
-	coin_flip = 0;
+	is_game = 0;
 
 	return 0;
 }
@@ -853,7 +853,7 @@ static void Update_Spot()
 {
 	spot_data = 0;
 
-	if (coin_flip == 0) { // nycaptor
+	if (is_game == 0) { // nycaptor
 		// get the scene from ram, each scene (spot) uses a different priority system
 		spot_data = packedbcd_to_dec(DrvShareRAM[0x296]);
 		if (spot_data > 0) spot_data--;
@@ -893,8 +893,8 @@ static INT32 DrvDraw()
 
 		case 1:
 			if (nBurnLayer & 1) GenericTilemapDraw(0, pTransDraw, TMAP_DRAWLAYER1 | TMAP_SET_GROUP(3));
-			if (nSpriteEnable & 0x10) draw_sprites(3);
 			if (nBurnLayer & 2) GenericTilemapDraw(0, pTransDraw, TMAP_DRAWLAYER0 | TMAP_SET_GROUP(3));
+			if (nSpriteEnable & 0x10) draw_sprites(3);
 			if (nSpriteEnable & 0x20) draw_sprites(2);
 			if (nBurnLayer & 4) GenericTilemapDraw(0, pTransDraw, TMAP_DRAWLAYER1 | TMAP_SET_GROUP(2));
 			if (nBurnLayer & 8) GenericTilemapDraw(0, pTransDraw, TMAP_DRAWLAYER1 | TMAP_SET_GROUP(1));
@@ -952,13 +952,13 @@ static INT32 DrvFrame()
 			DrvInputs[1] ^= (DrvJoy2[i] & 1) << i;
 		}
 
-		if (coin_flip == 0) { // nycaptor/colt
+		if (is_game == 0) { // nycaptor/colt
 			BurnGunMakeInputs(0, DrvAnalog[0], DrvAnalog[1]);
 		} else {
 			BurnGunMakeInputs(0, DrvAnalog[1], -DrvAnalog[0]);
 		}
 
-		DrvInputs[0] ^= coin_flip;
+		DrvInputs[0] ^= 0x30;
 	}
 
 	INT32 nInterleave = 256;
@@ -1110,7 +1110,7 @@ struct BurnDriver BurnDrvNycaptor = {
 };
 
 
-// Colt
+// Colt (bootleg of N.Y. Captor)
 
 static struct BurnRomInfo coltRomDesc[] = {
 	{ "04.bin",			0x4000, 0xdc61fdb2, 1 | BRF_PRG | BRF_ESS }, //  0 Z80 #0 Code
@@ -1144,7 +1144,7 @@ static INT32 ColtInit()
 
 struct BurnDriver BurnDrvColt = {
 	"colt", "nycaptor", NULL, NULL, "1986",
-	"Colt\0", NULL, "bootleg", "Miscellaneous",
+	"Colt (bootleg of N.Y. Captor)\0", NULL, "bootleg", "Miscellaneous",
 	NULL, NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_CLONE | BDF_BOOTLEG, 2, HARDWARE_TAITO_MISC, GBF_SHOOT, 0,
 	NULL, coltRomInfo, coltRomName, NULL, NULL, NULL, NULL, NycaptorInputInfo, ColtDIPInfo,
@@ -1200,7 +1200,7 @@ struct BurnDriver BurnDrvCyclshtg = {
 };
 
 
-// Bronx
+// Bronx (bootleg of Cycle Shooting)
 
 static struct BurnRomInfo bronxRomDesc[] = {
 	{ "1.bin",			0x4000, 0x399b5063, 1 | BRF_PRG | BRF_ESS }, //  0 Z80 #0 Code
@@ -1236,7 +1236,7 @@ static INT32 BronxInit()
 
 struct BurnDriver BurnDrvBronx = {
 	"bronx", "cyclshtg", NULL, NULL, "1986",
-	"Bronx\0", "GFX/layer priority issues", "bootleg", "Miscellaneous",
+	"Bronx (bootleg of Cycle Shooting)\0", "GFX/layer priority issues", "bootleg", "Miscellaneous",
 	NULL, NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED | BDF_BOOTLEG | BDF_HISCORE_SUPPORTED, 2, HARDWARE_TAITO_MISC, GBF_SHOOT, 0,
 	NULL, bronxRomInfo, bronxRomName, NULL, NULL, NULL, NULL, NycaptorInputInfo, BronxDIPInfo,

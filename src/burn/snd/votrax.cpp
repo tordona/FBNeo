@@ -363,6 +363,8 @@ votrax_sc01a_device::votrax_sc01a_device(const machine_config &mconfig, const ch
 }
 #endif
 
+static void ar_dummy_cb(INT32) { }
+
 INT32 sc01_read_request()
 {
 	stream.update();
@@ -479,6 +481,11 @@ void sc01_set_buffered(INT32 (*pCPUCyclesCB)(), INT32 nCPUMhz)
 	stream.set_buffered(pCPUCyclesCB, nCPUMhz);
 }
 
+void sc01_set_volume(double volume)
+{
+	stream.set_volume(volume);
+}
+
 void sc01_update(INT16 *output, INT32 samples_len)
 {
 	if (samples_len != nBurnSoundLen) {
@@ -574,7 +581,7 @@ void sc01_init(INT32 clock, void (*ar_cb)(INT32), INT32 reva)
 	//m_stream = stream_alloc(0, 1, m_sclock);
 	stream.init(m_sclock, nBurnSoundRate, 1, 1, sound_stream_update);
 
-	m_ar_cb = ar_cb;
+	m_ar_cb = (ar_cb) ? ar_cb : ar_dummy_cb;
 
 	m_rom = (UINT64*)BurnMalloc(64 * 8);
 	make_rom(reva);

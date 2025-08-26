@@ -77,7 +77,7 @@ extern UINT16 NeoAxis[];
 extern UINT8 NeoInput[];
 extern UINT8 NeoDiag[];
 extern UINT8 NeoDebugDip[];
-extern UINT8 NeoReset, NeoSystem, NeoCDBios;
+extern UINT8 NeoReset, NeoSystem, NeoCDBios, NeoUniHW, NeoOverscan;
 
 extern UINT8* Neo68KROMActive;
 extern UINT8* NeoVectorActive;
@@ -90,6 +90,7 @@ extern UINT32 nNeo68KROMBank;
 
 extern UINT32 nAllCodeSize;
 
+extern UINT8 nNeo68KRAMHack;
 extern UINT8 *NeoSpriteRAM, *NeoTextRAM;
 
 extern bool bNeoEnableGraphics;

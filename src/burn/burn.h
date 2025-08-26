@@ -138,19 +138,19 @@ inline static void SetCurrentFrame(const UINT32 n) {
 #define BRF_NODUMP			(1 << 28)
 
 struct BurnRomInfo {
-	char szName[100];
+	char *szName;
 	UINT32 nLen;
 	UINT32 nCrc;
 	UINT32 nType;
 };
 
 struct BurnSampleInfo {
-	char szName[100];
+	char *szName;
 	UINT32 nFlags;
 };
 
 struct BurnHDDInfo {
-	char szName[100];
+	char *szName;
 	UINT32 nLen;
 	UINT32 nCrc;
 };
@@ -437,7 +437,8 @@ INT32 BurnDrvGetHDDInfo(struct BurnHDDInfo *pri, UINT32 i);
 INT32 BurnDrvGetHDDName(char** pszName, UINT32 i, INT32 nAka);
 char* BurnDrvGetSourcefile();
 
-void Reinitialise();
+void Reinitialise(); // re-inits everything, including UI window
+void ReinitialiseVideo(); // re-init's video w/ new resolution/aspect ratio (see drv/megadrive.cpp)
 
 // ---------------------------------------------------------------------------
 // IPS Control
@@ -446,7 +447,7 @@ void Reinitialise();
 #define IPS_PGM_SPRHACK		(1 <<  1)	// For PGM hacks...
 #define IPS_PGM_MAPHACK		(1 <<  2)	// Id.
 #define IPS_PGM_SNDOFFS		(1 <<  3)	// Id.
-#define IPS_LOAD_EXPAND		(1 <<  4)	// Break the ips 16MB addressing limit.
+#define IPS_LOAD_EXPAND		(1 <<  4)	// Change temporary cache size on double load.
 #define IPS_EXTROM_INCL		(1 <<  5)	// Extra rom.
 #define IPS_PRG1_EXPAND		(1 <<  6)	// Additional request for prg length.
 #define IPS_PRG2_EXPAND		(1 <<  7)	// Id.
@@ -456,6 +457,8 @@ void Reinitialise();
 #define IPS_ACPU_EXPAND		(1 << 11)	// Additional request for audio cpu length.
 #define IPS_SND1_EXPAND		(1 << 12)	// Additional request for snd length.
 #define IPS_SND2_EXPAND		(1 << 13)	// Id.
+#define IPS_SNES_VRAMHK		(1 << 14)	// Allow invalid vram writes.
+#define IPS_NEO_RAMHACK		(1 << 15)	// Neo Geo 68kram hack.
 
 enum IpsRomTypes { EXP_FLAG, LOAD_ROM, EXTR_ROM, PRG1_ROM, PRG2_ROM, GRA1_ROM, GRA2_ROM, GRA3_ROM, ACPU_ROM, SND1_ROM, SND2_ROM };
 extern UINT32 nIpsDrvDefine, nIpsMemExpLen[SND2_ROM + 1];
@@ -463,6 +466,11 @@ extern UINT32 nIpsDrvDefine, nIpsMemExpLen[SND2_ROM + 1];
 extern bool bDoIpsPatch;
 
 void IpsApplyPatches(UINT8* base, char* rom_name, UINT32 rom_crc, bool readonly = false);
+
+// ---------------------------------------------------------------------------
+// MISC Helper / utility functions, etc
+int BurnComputeSHA1(const UINT8 *buffer, int buffer_size, char *hash_str);
+//int BurnComputeSHA1(const char *filename, char *hash_str);
 
 // ---------------------------------------------------------------------------
 // Flags used with the Burndriver structure
@@ -526,6 +534,7 @@ void IpsApplyPatches(UINT8* base, char* rom_name, UINT32 rom_crc, bool readonly 
 #define HARDWARE_PREFIX_FDS                             (0x1F000000)
 #define HARDWARE_PREFIX_NGP                             (0x20000000)
 #define HARDWARE_PREFIX_CHANNELF                        (0x21000000)
+#define HARDWARE_PREFIX_SNES                            (0x22000000)
 
 #define HARDWARE_SNK_NGP								(HARDWARE_PREFIX_NGP | 0x00000000)
 #define HARDWARE_SNK_NGPC								(HARDWARE_PREFIX_NGP | 0x00000001) // must not be 0x10000
@@ -645,6 +654,7 @@ void IpsApplyPatches(UINT8* base, char* rom_name, UINT32 rom_crc, bool readonly 
 #define HARDWARE_SMS_MAPPER_KOREA16K 					(0x06)
 #define HARDWARE_SMS_MAPPER_4PAK     					(0x07)
 #define HARDWARE_SMS_MAPPER_XIN1     					(0x08)
+#define HARDWARE_SMS_MAPPER_WONDERKID					(0x09)
 #define HARDWARE_SMS_MAPPER_NONE     					(0x0F)
 
 #define HARDWARE_SMS_CONTROL_PADDLE						(0x00010)
@@ -765,6 +775,9 @@ void IpsApplyPatches(UINT8* base, char* rom_name, UINT32 rom_crc, bool readonly 
 
 #define HARDWARE_NES									(HARDWARE_PREFIX_NES)
 #define HARDWARE_FDS									(HARDWARE_PREFIX_FDS)
+#define HARDWARE_SNES                                   (HARDWARE_PREFIX_SNES)
+#define HARDWARE_SNES_ZAPPER                            (HARDWARE_PREFIX_SNES | 0x0000001)
+#define HARDWARE_SNES_JUSTIFIER                         (HARDWARE_PREFIX_SNES | 0x0000002)
 
 #define HARDWARE_CHANNELF                               (HARDWARE_PREFIX_CHANNELF)
 
@@ -789,15 +802,16 @@ void IpsApplyPatches(UINT8* base, char* rom_name, UINT32 rom_crc, bool readonly 
 #define GBF_MAHJONG										(1 << 17)
 #define GBF_RACING										(1 << 18)
 #define GBF_SHOOT										(1 << 19)
-#define GBF_ACTION  									(1 << 20)
-#define GBF_RUNGUN  									(1 << 21)
-#define GBF_STRATEGY									(1 << 22)
-#define GBF_VECTOR                                      (1 << 23)
-#define GBF_RPG                                         (1 << 24)
-#define GBF_SIM                                         (1 << 25)
-#define GBF_ADV                                         (1 << 26)
-#define GBF_CARD                                        (1 << 27)
-#define GBF_BOARD                                       (1 << 28)
+#define GBF_MULTISHOOT									(1 << 20)
+#define GBF_ACTION  									(1 << 21)
+#define GBF_RUNGUN  									(1 << 22)
+#define GBF_STRATEGY									(1 << 23)
+#define GBF_VECTOR                                      (1 << 24)
+#define GBF_RPG                                         (1 << 25)
+#define GBF_SIM                                         (1 << 26)
+#define GBF_ADV                                         (1 << 27)
+#define GBF_CARD                                        (1 << 28)
+#define GBF_BOARD                                       (1 << 29)
 
 // flags for the family member
 #define FBF_MSLUG										(1 << 0)

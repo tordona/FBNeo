@@ -39,7 +39,11 @@ BEGIN
 	IDS_REPLAY_RECORD			"Record Input to File"
 	IDS_REPLAY_REPLAY			"Replay Input from File"
 
-	IDS_ROMS_SELECT_DIR			"Select Directory:"
+	IDS_SELECT_DIR				"Select Directory:"
+	IDS_ROMS_PATHS				"ROMs paths"
+	IDS_ROMS_EDIT_PATHS			"%s%sEdit ROMs paths"
+	IDS_EDIT_DEFAULTS			"Confirmed to reset all paths to defaults?"
+	IDS_SUPPORT_PATHS			"Support file paths"
 
 	IDS_STATE_LOAD				"Load State"
 	IDS_STATE_SAVE				"Save State"
@@ -59,6 +63,8 @@ BEGIN
 	IDS_NETPLAY_TOOMUCH			"too much text"
 
 	IDS_SSHOT_SAVED				"PNG saved"
+	IDS_STSHOT_SAVED			"PNG saved as title"
+	IDS_SPSHOT_SAVED			"PNG saved as preview"
 	IDS_SSHOT_ERROR				"PNG error %1d"
 
 	IDS_REC_AVI				"Rec AVI ON"
@@ -83,7 +89,10 @@ BEGIN
 	IDS_DISK_ALL_CARD			"All Memory Card Files"
 	IDS_DISK_ALL_DAT			"All Dat Files"
 	IDS_DISK_TEXT				"Text Files"
-	IDS_DISK_FILE_ROMDATA		"%s Romdata Files"
+	IDS_DISK_FILE_ROMDATA		"%s RomData Type"
+	IDS_DISK_FILE_IPSPATCH		"%s IPS Type"
+	IDS_DISK_FILE_NEOGEOCD		"%s NeoGeo-CD Type"
+	IDS_DISK_FILE_ARCHIVE		"%s Archive Types"
 
 	IDS_DISK_SAVEREPORT			"Save system information report"
 
@@ -106,6 +115,7 @@ BEGIN
 	IDS_ROMINFO_BIOS			"%s, BIOS"
 	IDS_ROMINFO_NODUMP			"No Dump"
 
+/*
 	IDS_SPATH_PREVIEW			"Previews"
 	IDS_SPATH_TITLES			"Titles"
 	IDS_SPATH_ICONS				"Icons"
@@ -113,6 +123,7 @@ BEGIN
 	IDS_SPATH_HISCORE			"High Scores"
 	IDS_SPATH_SAMPLES			"Samples"
 	IDS_SPATH_IPS				"IPS"
+	IDS_SPATH_ROMDATA			"RomData"
 	IDS_SPATH_NGCD_ISOS			"Neo Geo CDZ Games"
 	IDS_SPATH_NGCD_COVERS		"Neo Geo CDZ Covers"
 	IDS_SPATH_BLEND				"Blend Files"
@@ -130,27 +141,7 @@ BEGIN
 	IDS_SPATH_HISTORY			"History.dat"
 	IDS_SPATH_EEPROM			"EEPROM Saves"
 	IDS_SPATH_HDD				"HDD Images"
-
-	IDS_ROMPATH_1				"Path #1"
-	IDS_ROMPATH_2				"Path #2"
-	IDS_ROMPATH_3				"Path #3"
-	IDS_ROMPATH_4				"Path #4"
-	IDS_ROMPATH_5				"Path #5"
-	IDS_ROMPATH_6				"Path #6"
-	IDS_ROMPATH_7				"Path #7"
-	IDS_ROMPATH_8				"Path #8"
-	IDS_ROMPATH_9				"Path #9"
-	IDS_ROMPATH_10				"Path #10"
-	IDS_ROMPATH_11				"Path #11"
-	IDS_ROMPATH_12				"Path #12"
-	IDS_ROMPATH_13				"Path #13"
-	IDS_ROMPATH_14				"Path #14"
-	IDS_ROMPATH_15				"Path #15"
-	IDS_ROMPATH_16				"Path #16"
-	IDS_ROMPATH_17				"Path #17"
-	IDS_ROMPATH_18				"Path #18"
-	IDS_ROMPATH_19				"Path #19"
-	IDS_ROMPATH_20				"Path #20"
+*/
 
 	IDS_PRESET_SAVED			"The preset file was saved to %s."
 
@@ -194,7 +185,6 @@ BEGIN
 	IDS_SEL_GENUINE				"Genuine"
 	IDS_SEL_SETSTATUS			"Showing %i of %i sets [%i Unavailable sets]"
 	IDS_SEL_KANEKO				"Kaneko"
-	IDS_SEL_SNES				"SNES"
 	IDS_SEL_DATAEAST			"Data East"
 	IDS_SEL_CAPCOM_MISC			"Capcom (Other)"
 	IDS_SEL_SETA				"Seta"
@@ -207,6 +197,7 @@ BEGIN
 	IDS_SEL_MSX					"MSX"
 	IDS_SEL_NES                 "NES"
 	IDS_SEL_FDS                 "FDS"
+	IDS_SEL_SNES				"SNES"
 	IDS_SEL_NGP                 "Neo Geo Pocket"
 	IDS_SEL_CHANNELF            "Fairchild Channel F"
 	IDS_SEL_SPECTRUM			"ZX Spectrum"
@@ -236,6 +227,7 @@ BEGIN
 	IDS_GENRE_MAHJONG			"Mahjong"
 	IDS_GENRE_RACING			"Racing"
 	IDS_GENRE_SHOOT				"Shooter"
+	IDS_GENRE_MULTISHOOT		"Shooter / Multi-direction / Sh'mup"
 	IDS_GENRE_RUNGUN            "Run 'n Gun (Shooter)"
     IDS_GENRE_STRATEGY          "Strategy"
     IDS_GENRE_ACTION            "Action (Classic)"
@@ -261,10 +253,19 @@ BEGIN
 	IDS_FAMILY_OTHER			"Other"
 
 	IDS_IPSMANAGER_TITLE		"IPS Patch Manager"
+	
+	IDS_SUPPORTPATH_TITLE		"%s%sEdit support file paths"
 
 	IDS_NGCD_DIAG_TITLE			"%s%sNeo Geo CDZ%sSelect Game"
 	IDS_NGCD_TITLE				"Title"
 	IDS_NGCD_NGCDID				"NGCD-ID"
+
+	IDS_ROMDATAMANAGER_TITLE	"%s%sRomData Manager%sSelect Game"
+	IDS_ROMDATA_DATPATH			"Dat path"
+	IDS_ROMDATA_ROMSET			"Romset"
+	IDS_ROMDATA_DRIVER			"Driver"
+	IDS_ROMDATA_HARDWARE_DESC	"%s"
+	IDS_ROMDATA_FULLNAME		"Game"
 
 	IDS_MENU_0 					"&Arcade"
     IDS_MENU_1 					"&Other..."
@@ -278,6 +279,8 @@ BEGIN
 	IDS_NUMDIAL_FILTER_SHARP	"Select desired filter sharpness"
 
 	IDS_SCANNING_ROMS			"Scanning ROMs..."
+
+	IDS_CACHING_ICONS			"Loading Icons..."
 
 	IDS_CHEAT_SEARCH_NEW		"New cheat search started"
 	IDS_CHEAT_SEARCH_ADD_MATCH	"%i Addresses Matched"
@@ -379,12 +382,20 @@ BEGIN
 	IDS_ERR_DISK_UNAVAIL		" is for an unavailable game."
 	IDS_ERR_DISK_TOONEW			" does not work with this version of %s."
 	IDS_ERR_DISK_TOOOLD			" requires a more recent version of %s, please upgrade."
+	
+	IDS_ERR_FILE_ENCODING		"Unable to recognize the file encoding of xx.\n\nPlease use the following encodings:\n\nANSI\nUTF-8\nUTF-8 BOM\nUCS-2 Big Endian\nUCS-2 Little Endian\n"
+	IDS_ERR_FILE_EXIST			"File does not exist: %s\n"
+	IDS_ERR_FILE_OPEN			"An error occurred while opening the %s file."
+	IDS_ERR_FILE_CONTENT		"%s has been opened,\n\nbut it does not contain the required content."
+	IDS_ERR_FILE_EXTENSION		"Incorrect extension: %s\n\nCorrect extension: %s."
 
 	IDS_ERR_NO_NETPLAYDLL		"Error finding 'kailleraclient_arm64.dll'."
 	IDS_ERR_NO_DRIVER_SELECTED	"No driver has been selected from the list."
 	IDS_ERR_NO_DRIVER_SEL_SLOT1	"No driver has been selected for slot 1."
 	IDS_ERR_NON_WORKING			"This game isn't working. Load it anyway?"
 	IDS_ERR_CDEMU_INI_FAIL		"Couldn't initialise CD emulation."
+	IDS_ERR_DRIVER_NOT_EXIST	"Driver does not exist."
+	IDS_ERR_ROMSET_DUPLICATE	"Romset has duplicate names with drivers in the driver list."
 	
 	IDS_ERR_MACRO_NOT_MAPPING	"Double-click the macro to change its mapping first"
 

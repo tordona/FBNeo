@@ -15,6 +15,7 @@
 #define SEGA_MD_ROM_RELOAD_100000_300000							0x0a
 #define SEGA_MD_ARCADE_SUNMIXING									(0x4000)
 
+extern UINT8 MegadriveUnmappedRom;
 extern UINT8 MegadriveReset;
 extern UINT8 bMegadriveRecalcPalette;
 extern UINT8 MegadriveJoy1[12];
@@ -22,11 +23,13 @@ extern UINT8 MegadriveJoy2[12];
 extern UINT8 MegadriveJoy3[12];
 extern UINT8 MegadriveJoy4[12];
 extern UINT8 MegadriveJoy5[12];
-extern UINT8 MegadriveDIP[2];
-extern INT32 psolarmode;
+extern UINT8 MegadriveDIP[3];
 
 INT32 MegadriveInit();
 INT32 MegadriveInitNoDebug();
+INT32 MegadriveInitPaprium();
+INT32 MegadriveInitPsolar();
+INT32 MegadriveInitSot4w();
 INT32 MegadriveExit();
 INT32 MegadriveFrame();
 INT32 MegadriveScan(INT32 nAction, INT32 *pnMin);

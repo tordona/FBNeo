@@ -5,27 +5,29 @@
 int bDrvOkay = 0;						// 1 if the Driver has been initted okay, and it's okay to use the BurnDrv functions
 
 TCHAR szAppRomPaths[DIRS_MAX][MAX_PATH] = {
-	{ _T("") },
-	{ _T("") },
-	{ _T("") },
-	{ _T("roms/romdata/") },
-	{ _T("roms/channelf/") },
-	{ _T("roms/ngp/") },
-	{ _T("roms/nes/") },
-	{ _T("roms/fds/") },
-	{ _T("roms/spectrum/") },
-	{ _T("roms/msx/") },
-	{ _T("roms/sms/") },
-	{ _T("roms/gamegear/") },
-	{ _T("roms/sg1000/") },
-	{ _T("roms/coleco/") },
-	{ _T("roms/tg16/") },
-	{ _T("roms/sgx/") },
-	{ _T("roms/pce/") },
-	{ _T("roms/megadrive/") },
-	{ _T("roms/arcade/") },
-	{ _T("roms/") }
+	{ _T("roms/")			},
+	{ _T("roms/arcade/")	},
+	{ _T("roms/megadrive/")	},
+	{ _T("roms/pce/")		},
+	{ _T("roms/sgx/")		},
+	{ _T("roms/tg16/")		},
+	{ _T("roms/coleco/")	},
+	{ _T("roms/sg1000/")	},
+	{ _T("roms/gamegear/")	},
+	{ _T("roms/sms/")		},
+	{ _T("roms/msx/")		},
+	{ _T("roms/spectrum/")	},
+	{ _T("roms/snes/")		},
+	{ _T("roms/fds/")		},
+	{ _T("roms/nes/")		},
+	{ _T("roms/ngp/")		},
+	{ _T("roms/channelf/")	},
+	{ _T("roms/romdata/")	},
+	{ _T("")				},
+	{ _T("")				}
 };
+
+TCHAR szAppQuickPath[MAX_PATH] = _T("");
 
 static bool bSaveRAM = false;
 
@@ -212,7 +214,7 @@ int DrvInit(int nDrvNum, bool bRestore)
 	{ // Init input, save audio and blitter init for later. (reduce # of mode changes, nice for emu front-ends)
 		bVidOkay = 1; // don't init video yet
 		bAudOkay = 1; // don't init audio yet, but grab soundcard params (nBurnSoundRate) so soundcores can init.
-		MediaInit();
+		if (bDontInitMedia == false) MediaInit();
 		bVidOkay = 0;
 		bAudOkay = 0;
 	}
@@ -304,9 +306,7 @@ int DrvExit()
 {
 	if (bDrvOkay) {
 		NeoCDZRateChangeback();
-
 		StopReplay();
-
 		VidExit();
 
 		InvalidateRect(hScrnWnd, NULL, 1);
@@ -325,18 +325,14 @@ int DrvExit()
 			}
 
 			ConfigGameSave(bSaveInputs);
-
 			GameInpExit();				// Exit game input
-
 			BurnDrvExit();				// Exit the driver
 		}
 	}
 
 	BurnExtLoadRom = NULL;
-
-	bDrvOkay = 0;					// Stop using the BurnDrv functions
-
-	bRunPause = 0;					// Don't pause when exitted
+	bDrvOkay       = 0;					// Stop using the BurnDrv functions
+	bRunPause      = 0;					// Don't pause when exitted
 
 	if (bAudOkay && pBurnSoundOut) {
 		// Write silence into the sound buffer on exit, and for drivers which don't use pBurnSoundOut
@@ -344,12 +340,10 @@ int DrvExit()
 	}
 
 	CDEmuExit();
-
-	BurnExtCartridgeSetupCallback = NULL;
-
 	RomDataExit();
 
-	nBurnDrvActive = ~0U;			// no driver selected
+	BurnExtCartridgeSetupCallback = NULL;
+	nBurnDrvActive = ~0U;				// no driver selected
 
 	return 0;
 }

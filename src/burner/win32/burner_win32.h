@@ -59,30 +59,30 @@ INT32 Dx9Core_Init();
 
 // Macros used for handling Window Messages
 #define HANDLE_WM_ENTERMENULOOP(hwnd, wParam, lParam, fn)		\
-    ((fn)((hwnd), (BOOL)(wParam)), 0L)
+	((fn)((hwnd), (BOOL)(wParam)), 0L)
 
 #ifdef __GNUC__
 #define HANDLE_WM_EXITMENULOOP(hwnd, wParam, lParam, fn)		\
-    ((fn)((hwnd), (BOOL)(wParam)))
+	((fn)((hwnd), (BOOL)(wParam)))
 #else
 #define HANDLE_WM_EXITMENULOOP(hwnd, wParam, lParam, fn)		\
-    ((fn)((hwnd), (BOOL)(wParam)), 0L)
+	((fn)((hwnd), (BOOL)(wParam)), 0L)
 #endif
 
 #define HANDLE_WM_ENTERSIZEMOVE(hwnd, wParam, lParam, fn)		\
-    ((fn)(hwnd), 0L)
+	((fn)(hwnd), 0L)
 
 #define HANDLE_WM_EXITSIZEMOVE(hwnd, wParam, lParam, fn)		\
-    ((fn)(hwnd), 0L)
+	((fn)(hwnd), 0L)
 
 #define HANDLE_WM_UNINITMENUPOPUP(hwnd,wParam,lParam,fn)		\
 	((fn)((hwnd), (HMENU)(wParam), (UINT)LOWORD(lParam), (BOOL)HIWORD(lParam)),0)
 
 // Extra macro used for handling Window Messages
 #define HANDLE_MSGB(hwnd, message, fn)							\
-    case (message): 												\
-         HANDLE_##message((hwnd), (wParam), (lParam), (fn)); \
-         break;
+	case (message): 												\
+		HANDLE_##message((hwnd), (wParam), (lParam), (fn)); \
+		break;
 
 // Macro used for re-initialiging video/sound/input
 // #define POST_INITIALISE_MESSAGE { dprintf(_T("*** (re-) initialising - %s %i\n"), _T(__FILE__), __LINE__); PostMessage(NULL, WM_APP + 0, 0, 0); }
@@ -115,7 +115,9 @@ extern bool bAlwaysCreateSupportFolders;
 extern bool bAutoLoadGameList;
 
 extern bool bQuietLoading;
+extern bool bNoPopups;
 extern bool bShonkyProfileMode;
+extern bool bDontInitMedia;
 
 extern bool bNoChangeNumLock;
 extern bool bMonitorAutoCheck;
@@ -228,6 +230,7 @@ void DisableHighResolutionTiming();
 // drv.cpp
 extern int bDrvOkay;								// 1 if the Driver has been initted okay, and it's okay to use the BurnDrv functions
 extern TCHAR szAppRomPaths[DIRS_MAX][MAX_PATH];
+extern TCHAR szAppQuickPath[MAX_PATH];
 int DrvInit(int nDrvNum, bool bRestore);
 int DrvInitCallback();								// Used when Burn library needs to load a game. DrvInit(nBurnSelect, false)
 int DrvExit();
@@ -262,6 +265,7 @@ extern HWND hRebar;									// Handle to the Rebar control containing the menu
 extern HWND hwndChat;
 extern bool bRescanRoms;
 extern bool bMenuEnabled;
+extern INT32 nQuickOpen;
 
 extern RECT SystemWorkArea;							// The full screen area
 extern int nWindowPosX, nWindowPosY;
@@ -275,17 +279,23 @@ int ScrnTitle();
 void SetPauseMode(bool bPause);
 int ActivateChat();
 void DeActivateChat();
-int BurnerLoadDriver(TCHAR *szDriverName);
+int BurnerLoadDriver(TCHAR *pszDriverName);
 int StartFromReset(TCHAR *szDriverName, bool bLoadSram);
 void PausedRedraw(void);
 INT32 is_netgame_or_recording();
 void ScrnInitLua();
 void ScrnExitLua();
 char* DecorateKailleraGameName(UINT32 nBurnDrv);
+INT32 CreateAllDatfilesWindows(bool bSilent = false, const TCHAR* pszSpecDir = NULL);
+INT32 RomDataLoadDriver(const TCHAR* pszSelDat);
+INT32 BurnerQuickLoad(const INT32 nMode, const TCHAR* pszSelect);
+
+// bzip.cpp
+INT32 ArchiveNameFindDrv(const TCHAR* pszSelArc);
 
 // menu.cpp
 #define UM_DISPLAYPOPUP (WM_USER + 0x0100)
-#define UM_CANCELPOPUP (WM_USER + 0x0101)
+#define UM_CANCELPOPUP  (WM_USER + 0x0101)
 
 extern HANDLE hMenuThread;							// Handle to the thread that executes TrackPopupMenuEx
 extern DWORD nMenuThreadID;							// ID of the thread that executes TrackPopupMenuEx
@@ -303,9 +313,10 @@ extern int nScreenSizeVer;	// For vertical orientation
 extern int nWindowSize;
 
 #define SHOW_PREV_GAMES		10
-extern TCHAR szPrevGames[SHOW_PREV_GAMES][32];
+extern TCHAR szPrevGames[SHOW_PREV_GAMES][64];
 
 extern bool bModelessMenu;
+extern bool bAdaptivepopup;
 
 int MenuCreate();
 void MenuDestroy();
@@ -337,8 +348,6 @@ extern int nDialogSelect;
 extern int nOldDlgSelected;
 void CreateToolTipForRect(HWND hwndParent, PTSTR pszText);
 int SelMVSDialog();
-void LoadDrvIcons();
-void UnloadDrvIcons();
 #define		ICON_16x16			0
 #define		ICON_24x24			1
 #define		ICON_32x32			2
@@ -347,6 +356,15 @@ extern bool bIconsLoaded;
 extern bool bIconsOnlyParents;
 extern int nIconsSize, nIconsSizeXY, nIconsYDiff;
 extern bool bGameInfoOpen;
+extern bool bIconsByHardwares;
+
+extern HICON* pIconsCache;
+
+void CreateDrvIconsCache();
+void DestroyDrvIconsCache();
+
+void LoadDrvIcons();
+void UnloadDrvIcons();
 
 // neocdsel.cpp
 extern int NeoCDList_Init();
@@ -360,7 +378,30 @@ HBITMAP PNGLoadBitmap(HWND hWnd, FILE* fp, int nWidth, int nHeight, int nPreset)
 HBITMAP LoadBitmap(HWND hWnd, FILE* fp, int nWidth, int nHeight, int nPreset);
 int NeoCDList_CheckISO(TCHAR* pszFile, void (*pfEntryCallBack)(INT32, TCHAR*));
 
+// romdata.cpp
+extern bool bRDListScanSub;
+TCHAR* _strqtoken(TCHAR* s, const TCHAR* delims);
+INT32 RomdataGetDrvIndex(const TCHAR* pszDrvName);
+TCHAR* RomdataGetZipName(const TCHAR* pszFileName);
+TCHAR* RomdataGetDrvName(const TCHAR* pszFileName);
+TCHAR* RomdataGetFullName(const TCHAR* pszFileName);
+bool FindZipNameFromDats(const TCHAR* dirPath, const char* pszZipName, TCHAR* pszFindDat);
+INT32 RomDataManagerInit();
+bool RomDataSetQuickPath(const TCHAR* pszSelDat);
+INT32 RomDataCheck(const TCHAR* pszDatFile);
+void RomDataStateBackup();
+void RomDataStateRestore();
+bool RomDataExportTemplate(HWND hWnd, const INT32 nDrvSelect);
+
 // cona.cpp
+struct SubDirInfo {
+	TCHAR   BaseDir[MAX_PATH];
+	TCHAR** SubDirs;
+	UINT32  nCount;
+};
+
+extern SubDirInfo _SubDirInfo[DIRS_MAX];
+
 extern int nIniVersion;
 
 struct VidPresetData { int nWidth; int nHeight; };
@@ -369,6 +410,9 @@ extern struct VidPresetData VidPreset[4];
 struct VidPresetDataVer { int nWidth; int nHeight; };
 extern struct VidPresetDataVer VidPresetVer[4];
 
+INT32 LookupSubDirThreads();
+void SubDirThreadExit();
+void DestroySubDir();
 int ConfigAppLoad();
 int ConfigAppSave();
 
@@ -422,6 +466,7 @@ int StatedSave(int nSlot);
 // numdial.cpp
 int NumDialCreate(int bDial);
 void GammaDialog();
+void HardFXShaderSettingsDialog();
 void ScanlineDialog();
 void PhosphorDialog();
 void ScreenAngleDialog();
@@ -431,17 +476,21 @@ void CubicSharpnessDialog();
 int SFactdCreate();
 
 // roms.cpp
+extern INT32 nRomsDlgWidth;
+extern INT32 nRomsDlgHeight;
 extern char* gameAv;
 extern bool avOk;
 extern bool bSkipStartupCheck;
-int RomsDirCreate(HWND hParentWND);
-int CreateROMInfo(HWND hParentWND);
+INT32 RomsDirCreate(HWND hParentWND);
+INT32 CreateROMInfo(HWND hParentWND);
 void FreeROMInfo();
-int WriteGameAvb();
+INT32 WriteGameAvb();
 
 // support_paths.cpp
-int SupportDirCreate(HWND hParentWND);
-int SupportDirCreateTab(int nTab, HWND hParentWND);
+extern INT32 nSupportDlgWidth;
+extern INT32 nSupportDlgHeight;
+INT32 SupportDirCreate(HWND hParentWND);
+//int SupportDirCreateTab(int nTab, HWND hParentWND);
 
 // res.cpp
 int ResCreate(int);
@@ -460,6 +509,7 @@ int ReplayInput();
 int StartRecord();
 int StartReplay(const TCHAR* szFileName = NULL);
 void StopReplay();
+INT32 FreezeInputSize();
 int FreezeInput(unsigned char** buf, int* size);
 int UnfreezeInput(const unsigned char* buf, int size);
 void DisplayReplayProperties(HWND hDlg, bool bClear);
@@ -503,9 +553,9 @@ int PaletteViewerDialogCreate(HWND hParentWND);
 // ips_manager.cpp
 extern INT32 nIpsSelectedLanguage;
 INT32 GetIpsNumPatches();
-void LoadIpsActivePatches();
-INT32 GetIpsNumActivePatches();
+INT32 LoadIpsActivePatches();
 INT32 IpsManagerCreate(HWND hParentWND);
+INT32 IpsGetDrvForQuickOpen(const TCHAR* pszSelDat);
 
 // localise_download.cpp
 int LocaliseDownloadCreate(HWND hParentWND);

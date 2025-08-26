@@ -82,6 +82,7 @@ INT32 nVidVerWidth	= 640, nVidVerHeight	= 480;	// Default Vertical oriented reso
 INT32 nVidFullscreen = 0;
 INT32 bVidFullStretch = 0;						// 1 = stretch to fill the entire window/screen
 INT32 bVidCorrectAspect = 1;						// 1 = stretch to fill the window/screen while maintaining the correct aspect ratio
+INT32 bVidIntegerScale = 0;						// Wants integer scaling
 INT32 bVidVSync = 0;								// 1 = sync blits/pageflips/presents to the screen
 INT32 bVidTripleBuffer = 0;						// 1 = use triple buffering
 INT32 bVidBilinear = 1;							// 1 = enable bi-linear filtering (D3D blitter)
@@ -238,6 +239,9 @@ INT32 VidInit()
 					VidExit();
 					nRet = 1;
 				}
+
+				memset(pVidTransPalette, 0, 32768 * sizeof(UINT32));
+				memset(pVidTransImage, 0, nVidImageWidth * nVidImageHeight * sizeof(INT16));
 			}
 		}
 	}
@@ -382,6 +386,7 @@ static INT32 VidDoFrame(bool bRedraw)
 			bVidRecalcPalette = false;
 		}
 
+		nBurnBpp = 2;
 		pBurnDraw = pVidTransImage;
 		nBurnPitch = nVidImageWidth * 2;
 
@@ -438,6 +443,7 @@ INT32 VidReInitialise()
 
 		free(pVidTransImage);
 		pVidTransImage = (UINT8*)malloc(nVidImageWidth * nVidImageHeight * sizeof(INT16));
+		memset(pVidTransImage, 0, nVidImageWidth * nVidImageHeight * sizeof(INT16));
 	}
 
 	pVidImage = NULL; // Invalidate pVidImage* until blitter is reinitted. (pBurnDraw points to it on active video-frames)

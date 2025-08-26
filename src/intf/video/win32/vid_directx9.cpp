@@ -628,7 +628,12 @@ int dx9GeometryInit()
 #endif
 				return 1;
 			}
-			memcpy(pVertexData, &vScreen, 4 * sizeof(D3DLVERTEX2));
+			//memcpy(pVertexData, &vScreen, 4 * sizeof(D3DLVERTEX2));
+			pVertexData[0] = vScreen[0];
+			pVertexData[1] = vScreen[1];
+			pVertexData[2] = vScreen[2];
+			pVertexData[3] = vScreen[3];
+
 			pVB[y]->Unlock();
 		}
 	}
@@ -663,7 +668,14 @@ int dx9GeometryInit()
 			return 1;
 		}
 
-		memcpy(pVertexData, &vTemp, 4 * sizeof(D3DLVERTEX2));
+		// with the memcpy() below, gcc complains about copying a non-trivial type
+		//memcpy(pVertexData, &vTemp, 4 * sizeof(D3DLVERTEX2));
+		// try this instead:
+		pVertexData[0] = vTemp[0];
+		pVertexData[1] = vTemp[1];
+		pVertexData[2] = vTemp[2];
+		pVertexData[3] = vTemp[3];
+
 		pIntermediateVB->Unlock();
 	}
 
@@ -1262,8 +1274,9 @@ static int dx9Init()
 
 		GetClientScreenRect(hVidWnd, &rect);
 		rect.top += nMenuHeight; rect.bottom += nMenuHeight;
-		pD3DDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
-		pD3DDevice->Present(&rect, &rect, NULL, NULL);
+		// this clear interferes with bezel (other blitters dont clear the entire screen!)
+//		pD3DDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+//		pD3DDevice->Present(&rect, &rect, NULL, NULL);
 	}
 
 	// Create osd font
@@ -1325,9 +1338,44 @@ static int dx9Scale(RECT* pRect, int nWidth, int nHeight)
 	return VidSScaleImage(pRect, nWidth, nHeight, bVidScanRotate);
 }
 
+template <bool restore_viewport>
+static void ClearD3D9SurfaceEntirety()
+{
+	if (nVidFullscreen) {
+		D3DVIEWPORT9 vp;
+
+		// set the viewport to the entire screen
+		vp.X = 0;
+		vp.Y = 0;
+		vp.Width = nVidScrnWidth;
+		vp.Height = nVidScrnHeight;
+		vp.MinZ = 0.0f;
+		vp.MaxZ = 1.0f;
+
+		pD3DDevice->SetViewport(&vp);
+
+		// clear it
+		pD3DDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 0.0f, 0);
+
+		if (restore_viewport) {
+			// set the viewport back to game's dimensions
+			vp.X = Dest.left;
+			vp.Y = Dest.top;
+			vp.Width = Dest.right - Dest.left;
+			vp.Height = Dest.bottom - Dest.top;
+			vp.MinZ = 0.0f;
+			vp.MaxZ = 1.0f;
+
+			pD3DDevice->SetViewport(&vp);
+		}
+	}
+}
+
 // Copy BlitFXsMem to pddsBlitFX
 static int dx9MemToSurf()
 {
+	if (pVidImage == NULL) return 1; // prevent crash w/ sfiii2 screen resizer
+
 	GetClientRect(hVidWnd, &Dest);
 
 	if (nVidFullscreen == 0) {
@@ -1505,6 +1553,8 @@ static int dx9MemToSurf()
 	}
 	ProfileProfileStart(0);
 #endif
+
+	ClearD3D9SurfaceEntirety<false>();
 
 	{
 		D3DVIEWPORT9 vp;
@@ -1788,14 +1838,27 @@ struct transp_vertex {
 	float u, v;
 };
 
-char *HardFXFilenames[] = {
-	"support/shaders/crt_aperture.fx",
-	"support/shaders/crt_caligari.fx",
-	"support/shaders/crt_cgwg_fast.fx",
-	"support/shaders/crt_easymode.fx",
-	"support/shaders/crt_standard.fx",
-	"support/shaders/crt_bicubic.fx",
-	"support/shaders/crt_cga.fx"
+/*
+// in interface.h! for reference only.
+struct hardfx_config {
+	char *szFileName;
+	int nOptions;
+	const float fDefaults[4];
+	float fOptions[4];
+	char *szOptions[4];
+};
+*/
+
+hardfx_config HardFXConfigs[] = {
+	{ "n/a", 0, { 0.0, 0.0, 0.0, 0.0 } }, // 0 (note: zero entry is "None")
+	{ "support/shaders/crt_aperture.fx",	0, { 0.0, 0.0, 0.0, 0.0 } }, // 1
+	{ "support/shaders/crt_caligari.fx",	0, { 0.0, 0.0, 0.0, 0.0 } }, // 2
+	{ "support/shaders/crt_cgwg_fast.fx",	0, { 0.0, 0.0, 0.0, 0.0 } }, // 3
+	{ "support/shaders/crt_easymode.fx",	0, { 0.0, 0.0, 0.0, 0.0 } }, // 4
+	{ "support/shaders/crt_standard.fx",	0, { 0.0, 0.0, 0.0, 0.0 } }, // 5
+	{ "support/shaders/crt_bicubic.fx",		0, { 0.0, 0.0, 0.0, 0.0 } }, // 6
+	{ "support/shaders/crt_retrosl.fx",		1, { 0.0, 0.0, 0.0, 0.0 }, { 0, 0, 0, 0 }, "Animation (0 = disabled)", NULL, NULL, NULL }, // 7
+	{ "support/shaders/crt_cga.fx",			0, { 0.0, 0.0, 0.0, 0.0 } }, // 8
 };
 
 #undef D3DFVF_LVERTEX2
@@ -2042,16 +2105,23 @@ static int dx9AltSetVertex(unsigned int px, unsigned int py, unsigned int pw, un
 	return 0;
 }
 
+static void UpdateShaderVariables()
+{
+	if (pVidEffect && pVidEffect->IsValid()) {
+		pVidEffect->SetParamFloat2("texture_size", nTextureWidth, nTextureHeight);
+		// dinknote: "+ 0.5f" causes weird vertical lines in some shaders (f.ex: crt_aperture.fx)
+//		pVidEffect->SetParamFloat2("video_size", ((nRotateGame & 1) ? nGameHeight : nGameWidth) + 0.5f, ((nRotateGame & 1) ? nGameWidth : nGameHeight) + 0.5f);
+		pVidEffect->SetParamFloat2("video_size", ((nRotateGame & 1) ? nGameHeight : nGameWidth) + 0.0f, ((nRotateGame & 1) ? nGameWidth : nGameHeight) + 0.0f);
+		pVidEffect->SetParamFloat2("video_time", nCurrentFrame, (float)nCurrentFrame / 60);
+		pVidEffect->SetParamFloat4("user_settings", HardFXConfigs[nDX9HardFX].fOptions[0], HardFXConfigs[nDX9HardFX].fOptions[1], HardFXConfigs[nDX9HardFX].fOptions[2], HardFXConfigs[nDX9HardFX].fOptions[3]);
+	}
+}
+
+// DINKNOTE: Changing HardFX needs a reinit of video. (or some will fail to display properly)
 static int dx9AltSetHardFX(int nHardFX)
 {
 	// cutre reload
 	//static bool reload = true; if (GetAsyncKeyState(VK_CONTROL)) { if (reload) { nDX9HardFX = 0; reload = false; } } else reload = true;
-	
-	if (nHardFX == nDX9HardFX)
-	{
-		return 0;
-	}
-	
 
 	nDX9HardFX = nHardFX;
 
@@ -2059,7 +2129,7 @@ static int dx9AltSetHardFX(int nHardFX)
 		delete pVidEffect;
 		pVidEffect = NULL;
 	}
-	
+
 	if (nDX9HardFX == 0)
 	{
 		return 0;
@@ -2067,18 +2137,16 @@ static int dx9AltSetHardFX(int nHardFX)
 
 	// HardFX
 	pVidEffect = new VidEffect(pD3DDevice);
-	int r = pVidEffect->Load(HardFXFilenames[nHardFX - 1]);
+	int r = pVidEffect->Load(HardFXConfigs[nHardFX].szFileName);
 
 	if (r == 0)
 	{
-		bprintf(0, _T("HardFX ""%S"" loaded OK!\n"), HardFXFilenames[nHardFX - 1]);
-		// common parameters
-		pVidEffect->SetParamFloat2("texture_size", nTextureWidth, nTextureHeight);
-		pVidEffect->SetParamFloat2("video_size", (nRotateGame ? nGameHeight : nGameWidth) + 0.5f, nRotateGame ? nGameWidth : nGameHeight + 0.5f);
+		bprintf(0, _T("HardFX ""%S"" loaded OK!\n"), HardFXConfigs[nHardFX].szFileName);
+		UpdateShaderVariables();
 	}
 	else
 	{
-		FBAPopupAddText(PUF_TEXT_DEFAULT, MAKEINTRESOURCE(IDS_ERR_UI_HARDFX_MODULE), HardFXFilenames[nHardFX - 1]);
+		FBAPopupAddText(PUF_TEXT_DEFAULT, MAKEINTRESOURCE(IDS_ERR_UI_HARDFX_MODULE), HardFXConfigs[nHardFX].szFileName);
 		FBAPopupDisplay(PUF_TYPE_ERROR);
 	}
 
@@ -2266,6 +2334,9 @@ static int dx9AltInit()
 		}
 	}
 
+	// HardFX gets initted here
+	dx9AltSetHardFX(nVidDX9HardFX);
+
 	pD3DDevice->SetSamplerState(0, D3DSAMP_MINFILTER, bVidDX9Bilinear ? D3DTEXF_LINEAR : D3DTEXF_POINT);
 	pD3DDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, bVidDX9Bilinear ? D3DTEXF_LINEAR : D3DTEXF_POINT);
 
@@ -2281,8 +2352,9 @@ static int dx9AltInit()
 		RECT rect;
 		GetClientScreenRect(hVidWnd, &rect);
 
-		pD3DDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
-		pD3DDevice->Present(&rect, &rect, NULL, NULL);
+		// this clear interferes with bezel (other blitters dont clear the entire screen!)
+		//pD3DDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+		//pD3DDevice->Present(&rect, &rect, NULL, NULL);
 	}
 
 	// Create osd font
@@ -2372,6 +2444,8 @@ static void VidSCpyImg16(unsigned char* dst, unsigned int dstPitch, unsigned cha
 // Copy BlitFXsMem to pddsBlitFX
 static int dx9AltRender()  // MemToSurf
 {
+	if (pVidImage == NULL) return 1;
+
 	GetClientRect(hVidWnd, &Dest);
 
 	if (nVidFullscreen == 0) {
@@ -2416,8 +2490,9 @@ static int dx9AltRender()  // MemToSurf
 				dx9AltSetVertex(0, 0, nWidth, nHeight, nTextureWidth, nTextureHeight, 0, 0, nImageWidth, nImageHeight);
 			}
 
-			if (pVidEffect && pVidEffect->IsValid())
+			if (pVidEffect && pVidEffect->IsValid()) {
 				pVidEffect->SetParamFloat2("output_size", nImageWidth, nImageHeight);
+			}
 
 			D3DVIEWPORT9 vp;
 
@@ -2441,6 +2516,10 @@ static int dx9AltRender()  // MemToSurf
 			pD3DDevice->SetViewport(&vp);
 		}
 	}
+
+	ClearD3D9SurfaceEntirety<true>();
+
+	UpdateShaderVariables(); // once per frame
 
 	pD3DDevice->BeginScene();
 
@@ -2510,8 +2589,6 @@ static int dx9AltRender()  // MemToSurf
 	vid_FontDraw(Dest);
 
 	pD3DDevice->EndScene();
-
-	dx9AltSetHardFX(nVidDX9HardFX);
 
 	return 0;
 }

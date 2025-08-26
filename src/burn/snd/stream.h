@@ -42,6 +42,8 @@ struct Stream {
 	#define MAX_CHANNELS  8
 	INT32 nChannels;
 	bool bAddStream;
+	bool bRateChange;
+	UINT32 nNewRate;
 
 	INT16 *in_buffer[MAX_CHANNELS]; // resampler in-buffers
 	INT32 out_buffer_size;
@@ -52,16 +54,18 @@ struct Stream {
 		nSampleRateFrom = rate_from;
 		nSampleRateTo = rate_to;
 		nChannels = channels;
-		set_rate(rate_from);
+		set_rate_internal(rate_from);
 
 		stream_init(update_stream);
 	}
 	void set_rate(INT32 rate_from) {
+		bRateChange = true;
+		nNewRate = rate_from;
+	}
+	void set_rate_internal(INT32 rate_from) {
 		nSampleRateFrom = rate_from;
 		nSampleSize = (UINT64)nSampleRateFrom * (1 << 16) / ((nSampleRateTo == 0) ? 44100 : nSampleRateTo);
 		nSampleSize_Otherway = (UINT64)((nSampleRateTo == 0) ? 44100 : nSampleRateTo) * (1 << 16) / ((nSampleRateFrom == 0) ? 44100 : nSampleRateFrom);
-		// origially this restarted the frame (nPosition = 0), but this breaks
-		// qbert, as the game writes rate changes several times per frame.
 	}
 	void exit() {
 		nSampleSize = nFractionalPosition = 0;
@@ -112,6 +116,10 @@ struct Stream {
 		// mask off the whole samples from our accumulator
 		nFractionalPosition &= 0xffff;
 
+		if (bRateChange) {
+			set_rate_internal(nNewRate);
+			bRateChange = false;
+		}
 	}
 	void samplesample(INT16 *out_buffer, INT32 samples) {
 		for (INT32 i = 0; i < samples; i++, out_buffer += 2, nFractionalPosition += nSampleSize) {
@@ -131,8 +139,13 @@ struct Stream {
 			sample_l = BURN_SND_CLIP(sample_l * volume);
 			sample_r = BURN_SND_CLIP(sample_r * volume);
 
-			sample_l = ((route & BURN_SND_ROUTE_LEFT) == BURN_SND_ROUTE_LEFT) ? sample_l : 0;
-			sample_r = ((route & BURN_SND_ROUTE_RIGHT) == BURN_SND_ROUTE_RIGHT) ? sample_r : 0;
+			if (route & (BURN_SND_ROUTE_PANLEFT | BURN_SND_ROUTE_PANRIGHT)) {
+				sample_l = ((route & BURN_SND_ROUTE_PANLEFT) == BURN_SND_ROUTE_PANLEFT) ? sample_l : (sample_l / 3);
+				sample_r = ((route & BURN_SND_ROUTE_PANRIGHT) == BURN_SND_ROUTE_PANRIGHT) ? sample_r : (sample_r / 3);
+			} else {
+				sample_l = ((route & BURN_SND_ROUTE_LEFT) == BURN_SND_ROUTE_LEFT) ? sample_l : 0;
+				sample_r = ((route & BURN_SND_ROUTE_RIGHT) == BURN_SND_ROUTE_RIGHT) ? sample_r : 0;
+			}
 
 			if (bAddStream) {
 				out_buffer[0] = BURN_SND_CLIP(out_buffer[0] + sample_l);
@@ -218,8 +231,13 @@ struct Stream {
 			sample_l = BURN_SND_CLIP(sample_l * volume);
 			sample_r = BURN_SND_CLIP(sample_r * volume);
 
-			sample_l = ((route & BURN_SND_ROUTE_LEFT) == BURN_SND_ROUTE_LEFT) ? sample_l : 0;
-			sample_r = ((route & BURN_SND_ROUTE_RIGHT) == BURN_SND_ROUTE_RIGHT) ? sample_r : 0;
+			if (route & (BURN_SND_ROUTE_PANLEFT | BURN_SND_ROUTE_PANRIGHT)) {
+				sample_l = ((route & BURN_SND_ROUTE_PANLEFT) == BURN_SND_ROUTE_PANLEFT) ? sample_l : (sample_l / 3);
+				sample_r = ((route & BURN_SND_ROUTE_PANRIGHT) == BURN_SND_ROUTE_PANRIGHT) ? sample_r : (sample_r / 3);
+			} else {
+				sample_l = ((route & BURN_SND_ROUTE_LEFT) == BURN_SND_ROUTE_LEFT) ? sample_l : 0;
+				sample_r = ((route & BURN_SND_ROUTE_RIGHT) == BURN_SND_ROUTE_RIGHT) ? sample_r : 0;
+			}
 
 			if (bAddStream) {
 				out_buffer[0] = BURN_SND_CLIP(out_buffer[0] + sample_l);
@@ -256,8 +274,13 @@ struct Stream {
 			sample_l = BURN_SND_CLIP(sample_l * volume);
 			sample_r = BURN_SND_CLIP(sample_r * volume);
 
-			sample_l = ((route & BURN_SND_ROUTE_LEFT) == BURN_SND_ROUTE_LEFT) ? sample_l : 0;
-			sample_r = ((route & BURN_SND_ROUTE_RIGHT) == BURN_SND_ROUTE_RIGHT) ? sample_r : 0;
+			if (route & (BURN_SND_ROUTE_PANLEFT | BURN_SND_ROUTE_PANRIGHT)) {
+				sample_l = ((route & BURN_SND_ROUTE_PANLEFT) == BURN_SND_ROUTE_PANLEFT) ? sample_l : (sample_l / 3);
+				sample_r = ((route & BURN_SND_ROUTE_PANRIGHT) == BURN_SND_ROUTE_PANRIGHT) ? sample_r : (sample_r / 3);
+			} else {
+				sample_l = ((route & BURN_SND_ROUTE_LEFT) == BURN_SND_ROUTE_LEFT) ? sample_l : 0;
+				sample_r = ((route & BURN_SND_ROUTE_RIGHT) == BURN_SND_ROUTE_RIGHT) ? sample_r : 0;
+			}
 
 			if (bAddStream) {
 				out_buffer[0] = BURN_SND_CLIP(out_buffer[0] + sample_l);

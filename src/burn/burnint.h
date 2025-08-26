@@ -183,7 +183,8 @@ void CpuCheatRegister(INT32 type, cpu_core_config *config);
 cheat_core *GetCpuCheatRegister(INT32 nCPU);
 cpu_core_config *GetCpuCoreConfig(INT32 nCPU);
 
-void nes_init_cheat_functions(void (*func1)(char*), void (*func2)(char*)); // callback for d_nes
+// Setup callbacks for systems which internalize the cheat system, ie: nes & snes GameGenie codes
+void nes_init_cheat_functions(void (*add_func)(char*, int), void (*remove_func)(char*));
 
 // burn_memory.cpp
 void BurnInitMemoryManager();
@@ -202,7 +203,7 @@ UINT32 BurnRoundPowerOf2(UINT32 in);
 #define BURN_SND_ROUTE_LEFT			1
 #define BURN_SND_ROUTE_RIGHT		2
 #define BURN_SND_ROUTE_BOTH			(BURN_SND_ROUTE_LEFT | BURN_SND_ROUTE_RIGHT)
-// the following 2 are only supported in ay8910 and flt_rc
+// the following 2 are only supported in ay8910, flt_rc & anything using stream.h
 #define BURN_SND_ROUTE_PANLEFT      4
 #define BURN_SND_ROUTE_PANRIGHT     8
 

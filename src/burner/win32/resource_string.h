@@ -39,7 +39,11 @@
 #define IDS_REPLAY_RECORD				(IDS_STRING +  150)
 #define IDS_REPLAY_REPLAY				(IDS_STRING +  152)
 
-#define IDS_ROMS_SELECT_DIR				(IDS_STRING +  160)
+#define IDS_SELECT_DIR					(IDS_STRING +  160)
+#define IDS_ROMS_PATHS					(IDS_STRING +  162)
+#define IDS_ROMS_EDIT_PATHS				(IDS_STRING +  164)
+#define IDS_EDIT_DEFAULTS				(IDS_STRING +  166)
+#define IDS_SUPPORT_PATHS				(IDS_STRING +  168)
 
 #define IDS_STATE_LOAD					(IDS_STRING +  180)
 #define IDS_STATE_SAVE					(IDS_STRING +  182)
@@ -84,6 +88,9 @@
 #define IDS_DISK_TEXT					(IDS_STRING +  324)
 #define IDS_DISK_FILE_PATCH				(IDS_STRING +  326)
 #define IDS_DISK_FILE_ROMDATA			(IDS_STRING +  328)
+#define IDS_DISK_FILE_IPSPATCH			(IDS_STRING +  330)
+#define IDS_DISK_FILE_NEOGEOCD			(IDS_STRING +  332)
+#define IDS_DISK_FILE_ARCHIVE			(IDS_STRING +  334)
 
 #define IDS_DISK_SAVEREPORT				(IDS_STRING +  340)
 
@@ -106,6 +113,7 @@
 #define IDS_ROMINFO_BIOS				(IDS_STRING +  426)
 #define IDS_ROMINFO_NODUMP				(IDS_STRING +  428)
 
+/*
 #define IDS_SPATH_PREVIEW				(IDS_STRING +  430)
 #define IDS_SPATH_TITLES				(IDS_STRING +  432)
 #define IDS_SPATH_ICONS					(IDS_STRING +  434)
@@ -130,27 +138,8 @@
 #define IDS_SPATH_HISTORY				(IDS_STRING +  472)
 #define IDS_SPATH_EEPROM				(IDS_STRING +  474)
 #define IDS_SPATH_HDD					(IDS_STRING +  476)
-
-#define IDS_ROMPATH_1					(IDS_STRING +  480)
-#define IDS_ROMPATH_2					(IDS_STRING +  482)
-#define IDS_ROMPATH_3					(IDS_STRING +  484)
-#define IDS_ROMPATH_4					(IDS_STRING +  486)
-#define IDS_ROMPATH_5					(IDS_STRING +  488)
-#define IDS_ROMPATH_6					(IDS_STRING +  490)
-#define IDS_ROMPATH_7					(IDS_STRING +  492)
-#define IDS_ROMPATH_8					(IDS_STRING +  494)
-#define IDS_ROMPATH_9					(IDS_STRING +  496)
-#define IDS_ROMPATH_10					(IDS_STRING +  498)
-#define IDS_ROMPATH_11					(IDS_STRING +  500)
-#define IDS_ROMPATH_12					(IDS_STRING +  502)
-#define IDS_ROMPATH_13					(IDS_STRING +  504)
-#define IDS_ROMPATH_14					(IDS_STRING +  506)
-#define IDS_ROMPATH_15					(IDS_STRING +  508)
-#define IDS_ROMPATH_16					(IDS_STRING +  510)
-#define IDS_ROMPATH_17					(IDS_STRING +  512)
-#define IDS_ROMPATH_18					(IDS_STRING +  514)
-#define IDS_ROMPATH_19					(IDS_STRING +  516)
-#define IDS_ROMPATH_20					(IDS_STRING +  518)
+#define IDS_SPATH_ROMDATA				(IDS_STRING +  478)
+*/
 
 #define IDS_PRESET_SAVED				(IDS_STRING +  520)
 
@@ -211,8 +200,8 @@
 #define IDS_SEL_SEGA_GRP				(IDS_STRING +  644)
 #define IDS_SEL_NES						(IDS_STRING +  646)
 #define IDS_SEL_FDS						(IDS_STRING +  648)
-#define IDS_SEL_NGP						(IDS_STRING +  556)
-#define IDS_SEL_CHANNELF				(IDS_STRING +  558)
+#define IDS_SEL_NGP						(IDS_STRING +  556) // maybe we should renumber these?
+#define IDS_SEL_CHANNELF				(IDS_STRING +  558) // ""
 
 #define IDS_GENRE						(IDS_STRING +  650)
 #define IDS_GENRE_HORSHOOT				(IDS_STRING +  652)
@@ -235,14 +224,15 @@
 #define IDS_GENRE_MAHJONG				(IDS_STRING +  686)
 #define IDS_GENRE_RACING				(IDS_STRING +  688)
 #define IDS_GENRE_SHOOT					(IDS_STRING +  690)
-#define IDS_GENRE_RUNGUN                (IDS_STRING +  692)
-#define IDS_GENRE_STRATEGY              (IDS_STRING +  694)
-#define IDS_GENRE_ACTION                (IDS_STRING +  696)
-#define IDS_GENRE_RPG                   (IDS_STRING +  698)
-#define IDS_GENRE_SIM                   (IDS_STRING +  700)
-#define IDS_GENRE_ADV                   (IDS_STRING +  702)
-#define IDS_GENRE_CARD                  (IDS_STRING +  704)
-#define IDS_GENRE_BOARD                 (IDS_STRING +  706)
+#define IDS_GENRE_MULTISHOOT			(IDS_STRING +  692)
+#define IDS_GENRE_RUNGUN                (IDS_STRING +  694)
+#define IDS_GENRE_STRATEGY              (IDS_STRING +  696)
+#define IDS_GENRE_ACTION                (IDS_STRING +  698)
+#define IDS_GENRE_RPG                   (IDS_STRING +  700)
+#define IDS_GENRE_SIM                   (IDS_STRING +  702)
+#define IDS_GENRE_ADV                   (IDS_STRING +  704)
+#define IDS_GENRE_CARD                  (IDS_STRING +  706)
+#define IDS_GENRE_BOARD                 (IDS_STRING +  708)
 
 #define IDS_FAMILY						(IDS_STRING +  740)
 #define IDS_FAMILY_MSLUG				(IDS_STRING +  742)
@@ -263,9 +253,19 @@
 
 #define IDS_IPSMANAGER_TITLE			(IDS_STRING +  800)
 
+#define IDS_SUPPORTPATH_TITLE			(IDS_STRING +  802)
+
+
 #define IDS_NGCD_DIAG_TITLE				(IDS_STRING +  810)
 #define IDS_NGCD_TITLE					(IDS_STRING +  812)
 #define IDS_NGCD_NGCDID					(IDS_STRING +  814)
+
+#define IDS_ROMDATAMANAGER_TITLE		(IDS_STRING +  820)
+#define IDS_ROMDATA_DATPATH				(IDS_STRING +  822)
+#define IDS_ROMDATA_ROMSET				(IDS_STRING +  824)
+#define IDS_ROMDATA_DRIVER				(IDS_STRING +  826)
+#define IDS_ROMDATA_HARDWARE_DESC		(IDS_STRING +  828)
+#define IDS_ROMDATA_FULLNAME			(IDS_STRING +  830)
 
 #define IDS_MENU_0						(IDS_STRING +  840)
 #define IDS_MENU_1						(IDS_STRING +  842)
@@ -279,6 +279,8 @@
 #define IDS_NUMDIAL_FILTER_SHARP		(IDS_STRING +  872)
 
 #define IDS_SCANNING_ROMS				(IDS_STRING +  876)
+
+#define IDS_CACHING_ICONS				(IDS_STRING +  878)
 
 #define IDS_CHEAT_SEARCH_NEW			(IDS_STRING +  880)
 #define IDS_CHEAT_SEARCH_ADD_MATCH		(IDS_STRING +  882)
@@ -334,6 +336,9 @@
 #define IDS_EMPTY						(IDS_STRING + 1424)
 #define IDS_UNIDENTIFIED_CD				(IDS_STRING + 1426)
 
+#define IDS_STSHOT_SAVED				(IDS_STRING + 1428)
+#define IDS_SPSHOT_SAVED				(IDS_STRING + 1430)
+
 #define IDS_ERR_ERROR					(IDS_ERROR  +    0)
 #define IDS_ERR_WARNING					(IDS_ERROR  +    2)
 #define IDS_ERR_INFORMATION				(IDS_ERROR  +    4)
@@ -381,11 +386,19 @@
 #define IDS_ERR_DISK_TOONEW				(IDS_ERROR  +   96)
 #define IDS_ERR_DISK_TOOOLD				(IDS_ERROR  +   98)
 
+#define IDS_ERR_FILE_ENCODING			(IDS_ERROR  +  100)
+#define IDS_ERR_FILE_EXIST				(IDS_ERROR  +  102)
+#define IDS_ERR_FILE_OPEN				(IDS_ERROR  +  104)
+#define IDS_ERR_FILE_CONTENT			(IDS_ERROR  +  106)
+#define IDS_ERR_FILE_EXTENSION			(IDS_ERROR  +  108)
+
 #define IDS_ERR_NO_NETPLAYDLL			(IDS_ERROR  +  110)
 #define IDS_ERR_NO_DRIVER_SELECTED		(IDS_ERROR  +  112)
 #define IDS_ERR_NO_DRIVER_SEL_SLOT1		(IDS_ERROR  +  114)
 #define IDS_ERR_NON_WORKING				(IDS_ERROR  +  116)
 #define IDS_ERR_CDEMU_INI_FAIL			(IDS_ERROR  +  118)
+#define IDS_ERR_DRIVER_NOT_EXIST		(IDS_ERROR  +  120)
+#define IDS_ERR_ROMSET_DUPLICATE		(IDS_ERROR  +  122)
 
 #define IDS_ERR_MACRO_NOT_MAPPING		(IDS_ERROR  +  130)
 

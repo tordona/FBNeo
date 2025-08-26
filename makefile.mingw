@@ -203,7 +203,7 @@ CXXFLAGS = -pipe \
 	   -fforce-mem -fforce-addr -finline-limit=1200 -fthread-jumps \
 	   -freduce-all-givs -fmove-all-movables -fexpensive-optimizations \
 	   -fcheck-new \
-	   -Wall -W -pedantic -Wno-long-long \
+	   -Wall -W -pedantic -Wno-long-long -Wno-sign-compare \
 	   -Wunknown-pragmas -Wundef -Wconversion -Wno-missing-braces \
 	   -Wuninitialized -Wpointer-arith -Winline -Wno-multichar \
 	   $(DEF) $(incdir)
@@ -433,12 +433,15 @@ vpath %.d 	$(foreach dir,$(alldir),$(objdir)$(dir)/ )
 #
 #
 
+# backward compatibility (make less than 4.4 doesn't support .WAIT)
+.WAIT:
+
 .PHONY:	all init cleandep touch clean
 
 ifeq ($(MAKELEVEL),1)
 ifdef DEPEND
 
-all:	init $(drvdep) $(autdep) $(autobj) $(autdrv)
+all:	init .WAIT $(drvdep) $(autdep) $(autobj) $(autdrv)
 ifdef GCC345
 	@$(MAKE) -f makefile.mingw -s GCC345=1
 endif
@@ -454,7 +457,7 @@ endif
 
 else
 
-all:	init $(autobj) $(autdrv)
+all:	init .WAIT $(autobj) $(autdrv)
 ifdef GCC345
 	@$(MAKE) -f makefile.mingw -s GCC345=1
 endif
@@ -737,7 +740,7 @@ ifeq ($(MAKELEVEL),1)
 
 %.o:	%.cpp
 	@echo Compiling $<...
-	@$(CC) $(CXXFLAGS) -c $< -o $(subst $(srcdir),$(objdir),$(<D))/$(@F)
+	@$(CXX) $(CXXFLAGS) -c $< -o $(subst $(srcdir),$(objdir),$(<D))/$(@F)
 
 %.o:	%.c
 	@echo Compiling $<...
@@ -749,6 +752,10 @@ ifeq ($(MAKELEVEL),1)
 
 else
 
+%.o:	%.cpp
+	@echo Compiling $<...
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
 %.o:	%.c
 	@echo Compiling $<...
 	@$(CC) $(CFLAGS) -c $< -o $@
@@ -756,10 +763,6 @@ else
 %.o:	%.asm | init
 	@echo Assembling $<...
 	@$(AS) $(ASFLAGS) $< -o $@
-
-%.o:
-	@echo Compiling $<...
-	@$(CC) $(CXXFLAGS) -c $< -o $@
 
 endif
 
@@ -771,15 +774,15 @@ ifdef DEPEND
 
 %.d:	%.c
 	@echo Generating depend file for $<...
-	@$(CC) -MM -MT "$(subst $(srcdir),$(objdir),$(<D))/$(*F).o $(subst $(srcdir),$(objdir),$(<D))/$(@F)" -x c++ $(CXXFLAGS) $< >$(subst $(srcdir),$(objdir),$(<D))/$(@F)
+	@$(CXX) -MM -MT "$(subst $(srcdir),$(objdir),$(<D))/$(*F).o $(subst $(srcdir),$(objdir),$(<D))/$(@F)" -x c++ $(CXXFLAGS) $< >$(subst $(srcdir),$(objdir),$(<D))/$(@F)
 
 %.d:	%.cpp
 	@echo Generating depend file for $<...
-	@$(CC) -MM -MT "$(subst $(srcdir),$(objdir),$(<D))/$(*F).o $(subst $(srcdir),$(objdir),$(<D))/$(@F)" -x c++ $(CXXFLAGS) $< >$(subst $(srcdir),$(objdir),$(<D))/$(@F)
+	@$(CXX) -MM -MT "$(subst $(srcdir),$(objdir),$(<D))/$(*F).o $(subst $(srcdir),$(objdir),$(<D))/$(@F)" -x c++ $(CXXFLAGS) $< >$(subst $(srcdir),$(objdir),$(<D))/$(@F)
 
 %.d:	%.rc
 	@echo Generating depend file for $<...
-	@$(CC) -MM -MT "$(subst $(srcdir),$(objdir),$(<D))/$(*F).o $(subst $(srcdir),$(objdir),$(<D))/$(@F)" -x c++ $(CXXFLAGS) $< >$(subst $(srcdir),$(objdir),$(<D))/$(@F)
+	@$(CXX) -MM -MT "$(subst $(srcdir),$(objdir),$(<D))/$(*F).o $(subst $(srcdir),$(objdir),$(<D))/$(@F)" -x c++ $(CXXFLAGS) $< >$(subst $(srcdir),$(objdir),$(<D))/$(@F)
 
 endif
 

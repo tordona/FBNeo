@@ -27,7 +27,6 @@ static UINT8 DrvReset;
 
 static UINT8 Dial1;
 
-static INT32 is_brkblast = 0;
 static INT32 has_altclock = 0;
 
 static struct BurnInputInfo WallcInputList[] = {
@@ -217,19 +216,14 @@ static INT32 DrvInit(INT32 incr)
 	MemIndex();
 
 	{
-		INT32 i = 0;
-		if (is_brkblast) {
-			if (BurnLoadRom(DrvZ80ROM + 0x0000,        i++, 1)) return 1;
-		} else {
-			if (BurnLoadRom(DrvZ80ROM + 0x0000,        i++, 1)) return 1;
-			if (BurnLoadRom(DrvZ80ROM + 0x2000,        i++, 1)) return 1;
-		}
+		if (BurnLoadRom(DrvZ80ROM + 0x0000,        0, 1)) return 1;
+		if (BurnLoadRom(DrvZ80ROM + 0x2000,        1, 1)) return 1;
 
-		if (BurnLoadRom(DrvGfxROM + 0x0000 + incr, i++, 1)) return 1;
-		if (BurnLoadRom(DrvGfxROM + 0x1000 + incr, i++, 1)) return 1;
-		if (BurnLoadRom(DrvGfxROM + 0x2000 + incr, i++, 1)) return 1;
+		if (BurnLoadRom(DrvGfxROM + 0x0000 + incr, 2, 1)) return 1;
+		if (BurnLoadRom(DrvGfxROM + 0x1000 + incr, 3, 1)) return 1;
+		if (BurnLoadRom(DrvGfxROM + 0x2000 + incr, 4, 1)) return 1;
 
-		if (BurnLoadRom(DrvColPROM,                i++, 1)) return 1;
+		if (BurnLoadRom(DrvColPROM,                5, 1)) return 1;
 
 		DrvPaletteInit();
 		DrvGfxDecode();
@@ -265,7 +259,6 @@ static INT32 DrvExit()
 
 	BurnFree (AllMem);
 
-	is_brkblast = 0;
 	has_altclock = 0;
 
 	return 0;
@@ -456,16 +449,21 @@ struct BurnDriver BurnDrvWallca = {
 };
 
 
-// Wall Crash (set 2)
+// Brick Blast (bootleg of Wall Crash)
+// note: The original Fadesa PCB was distributed with two 2764 program ROMs, but these were later replaced, for cost reduction,
+//       with a single 27128 (at 6M) with the same contents, with CRC(4e96ca15) SHA1(87f1a3538712aa3d6c3713b845679dd42a4ba5a4)
 
 static struct BurnRomInfo brkblastRomDesc[] = {
-	{ "fadesa-r0.6m",	0x4000, 0x4e96ca15, 0 | BRF_ESS | BRF_PRG }, //  0 Z80 Code
+	{ "4.bin",			0x2000, 0xaced127e, 0 | BRF_ESS | BRF_PRG }, //  0 Z80 Code
+	{ "5.bin",			0x2000, 0xb789a705, 0 | BRF_ESS | BRF_PRG }, //  1
 
 	{ "rom3.rom",		0x0800, 0x6634db73, 1 | BRF_GRA },	     //  2 Graphics
 	{ "rom2.rom",		0x0800, 0x79f49c2c, 1 | BRF_GRA },	     //  3
 	{ "rom1.rom",   	0x0800, 0x3884fd4f, 1 | BRF_GRA },	     //  4
 
 	{ "74s288.c2",		0x0020, 0x83e3e293, 2 | BRF_GRA },	     //  5 Color Prom
+
+	{ "82s153.h8",		0x00eb, 0xa6db7c28, 0 | BRF_OPT },	     //  6 PLDs
 };
 
 STD_ROM_PICK(brkblast)
@@ -473,7 +471,6 @@ STD_ROM_FN(brkblast)
 
 static INT32 brkblastInit()
 {
-	is_brkblast = 1;
 	has_altclock = 1;
 
 	return wallcaInit();

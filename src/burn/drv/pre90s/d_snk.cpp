@@ -2211,7 +2211,7 @@ static void snkwave_exit()
 
 static void snkwave_update_waveform(UINT32 offset, UINT8 data)
 {
-	snkwave_waveform[offset * 2]     = ((data & 0x38) >> 3) << (12-CLOCK_SHIFT);
+	snkwave_waveform[offset * 2]     = ((data & 0x70) >> 4) << (12-CLOCK_SHIFT);
 	snkwave_waveform[offset * 2 + 1] = ((data & 0x07) >> 0) << (12-CLOCK_SHIFT);
 	snkwave_waveform[SNKWAVE_WAVEFORM_LENGTH-2 - offset * 2] = ~snkwave_waveform[offset * 2 + 1];
 	snkwave_waveform[SNKWAVE_WAVEFORM_LENGTH-1 - offset * 2] = ~snkwave_waveform[offset * 2];
@@ -2221,13 +2221,11 @@ static void snkwave_w(UINT32 offset, UINT8 data)
 {
 	stream.update();
 
-	data &= 0x3f; // all registers are 6-bit
-
-	if (offset == 0)
-		snkwave_frequency = (snkwave_frequency & 0x03f) | (data << 6);
-	else if (offset == 1)
-		snkwave_frequency = (snkwave_frequency & 0xfc0) | data;
-	else if (offset <= 5)
+	if (offset == 0) // F1, high 6 bits
+		snkwave_frequency = (snkwave_frequency & 0x03f) | ((data & 0xfc) << 4);
+	else if (offset == 1) // F2, low 6 bits
+		snkwave_frequency = (snkwave_frequency & 0xfc0) | (data & 0x3f);
+	else if (offset <= 5) // W3 thru W6, low 3 bits of each nybble
 		snkwave_update_waveform(offset - 2, data);
 }
 
@@ -7805,7 +7803,7 @@ STD_ROM_FN(tnk3b)
 
 struct BurnDriver BurnDrvTnk3b = {
 	"tnk3b", "tnk3", NULL, NULL, "1985",
-	"T.A.N.K (bootleg, 8-way joystick)\0", NULL, "SNK", "Miscellaneous",
+	"T.A.N.K (bootleg, 8-way joystick)\0", NULL, "bootleg", "Miscellaneous",
 	NULL, NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_BOOTLEG | BDF_HISCORE_SUPPORTED, 2, HARDWARE_MISC_PRE90S, GBF_RUNGUN, 0,
 	NULL, tnk3bRomInfo, tnk3bRomName, NULL, NULL, NULL, NULL, Tnk3InputInfo, Tnk3DIPInfo,
@@ -7883,7 +7881,7 @@ STD_ROM_FN(athenab)
 
 struct BurnDriver BurnDrvAthenab = {
 	"athenab", "athena", NULL, NULL, "1986",
-	"Athena (bootleg)\0", NULL, "SNK", "Miscellaneous",
+	"Athena (bootleg)\0", NULL, "bootleg", "Miscellaneous",
 	NULL, NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_CLONE | BDF_BOOTLEG | BDF_HISCORE_SUPPORTED, 2, HARDWARE_MISC_PRE90S, GBF_PLATFORM, 0,
 	NULL, athenabRomInfo, athenabRomName, NULL, NULL, NULL, NULL, AthenaInputInfo, AthenaDIPInfo,
@@ -8669,7 +8667,7 @@ struct BurnDriver BurnDrvVictroad = {
 };
 
 
-// Dogou Souken
+// Dogou Souken (Japan)
 
 static struct BurnRomInfo dogosokeRomDesc[] = {
 	{ "p1.4p",			0x10000, 0x37867ad2, 1 | BRF_ESS | BRF_PRG }, //  0 Z80 #0 Code
@@ -8712,7 +8710,7 @@ STD_ROM_FN(dogosoke)
 
 struct BurnDriver BurnDrvDogosoke = {
 	"dogosoke", "victroad", NULL, NULL, "1986",
-	"Dogou Souken\0", NULL, "SNK", "Miscellaneous",
+	"Dogou Souken (Japan)\0", NULL, "SNK", "Miscellaneous",
 	NULL, NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_HISCORE_SUPPORTED, 2, HARDWARE_MISC_PRE90S, GBF_RUNGUN, 0,
 	NULL, dogosokeRomInfo, dogosokeRomName, NULL, NULL, NULL, NULL, VictroadInputInfo, VictroadDIPInfo,

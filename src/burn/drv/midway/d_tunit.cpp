@@ -76,8 +76,8 @@ static struct BurnInputInfo Mk2InputList[] = {
 	{ "Service",		BIT_DIGITAL,	nTUnitJoy2 + 6,  "service"   },
 	{ "Service Mode",	BIT_DIGITAL,	nTUnitJoy2 + 4,  "diag"      },
 	{ "Tilt",			BIT_DIGITAL,	nTUnitJoy2 + 3,  "tilt"      },
-	{ "Volume Down",	BIT_DIGITAL,	nTUnitJoy2 + 10, "p1 fire 7" },
-	{ "Volume Up",		BIT_DIGITAL,	nTUnitJoy2 + 11, "p1 fire 8" },
+	{ "Volume Down",	BIT_DIGITAL,	nTUnitJoy2 + 10, "volumedown"},
+	{ "Volume Up",		BIT_DIGITAL,	nTUnitJoy2 + 11, "volumeup"  },
 	{ "Dip A",			BIT_DIPSWITCH,	nTUnitDSW + 0,   "dip"       },
 	{ "Dip B",			BIT_DIPSWITCH,	nTUnitDSW + 1,   "dip"       },
 };
@@ -129,8 +129,8 @@ static struct BurnInputInfo NbajamInputList[] = {
 	{ "Service",		BIT_DIGITAL,	nTUnitJoy2 + 6,  "service"   },
 	{ "Service Mode",	BIT_DIGITAL,	nTUnitJoy2 + 4,  "diag"      },
 	{ "Tilt",			BIT_DIGITAL,	nTUnitJoy2 + 3,  "tilt"      },
-	{ "Volume Down",	BIT_DIGITAL,	nTUnitJoy2 + 11, "p1 fire 7" },
-	{ "Volume Up",		BIT_DIGITAL,	nTUnitJoy2 + 12, "p1 fire 8" },
+	{ "Volume Down",	BIT_DIGITAL,	nTUnitJoy2 + 11, "volumedown"},
+	{ "Volume Up",		BIT_DIGITAL,	nTUnitJoy2 + 12, "volumeup"  },
 	{ "Dip A",			BIT_DIPSWITCH,	nTUnitDSW + 0,   "dip"       },
 	{ "Dip B",			BIT_DIPSWITCH,	nTUnitDSW + 1,   "dip"       },
 };
@@ -177,8 +177,8 @@ static struct BurnInputInfo JdreddpInputList[] = {
 	{ "Service",		BIT_DIGITAL,	nTUnitJoy2 + 6,  "service"   },
 	{ "Service Mode",	BIT_DIGITAL,	nTUnitJoy2 + 4,  "diag"      },
 	{ "Tilt",			BIT_DIGITAL,	nTUnitJoy2 + 3,  "tilt"      },
-	{ "Volume Down",	BIT_DIGITAL,	nTUnitJoy2 + 11, "p1 fire 7" },
-	{ "Volume Up",		BIT_DIGITAL,	nTUnitJoy2 + 12, "p1 fire 8" },
+	{ "Volume Down",	BIT_DIGITAL,	nTUnitJoy2 + 11, "volumedown"},
+	{ "Volume Up",		BIT_DIGITAL,	nTUnitJoy2 + 12, "volumeup"  },
 	{ "Dip A",			BIT_DIPSWITCH,	nTUnitDSW + 0,   "dip"       },
 	{ "Dip B",			BIT_DIPSWITCH,	nTUnitDSW + 1,   "dip"       },
 };
@@ -503,7 +503,7 @@ struct BurnDriver BurnDrvMk = {
 	BDF_GAME_WORKING, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mkRomInfo, mkRomName, NULL, NULL, NULL, NULL, MkInputInfo, MkDIPInfo,
     MkInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo mkr4RomDesc[] = {
@@ -541,7 +541,46 @@ struct BurnDriver BurnDrvMkr4 = {
 	BDF_GAME_WORKING | BDF_CLONE, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mkr4RomInfo, mkr4RomName, NULL, NULL, NULL, NULL, MkInputInfo, MkDIPInfo,
     MkInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
+};
+
+// Mortal Kombat Plus (Hack, BUILD 5.0.0741)
+static struct BurnRomInfo mkplusRomDesc[] = {
+	{ "mortal_kombat_plus.uj12",					0x080000, 0x8edf28c0, 1 | BRF_PRG | BRF_ESS }, //  0 TMS34010
+	{ "mortal_kombat_plus.ug12",					0x080000, 0xbe771d8d, 1 | BRF_PRG | BRF_ESS }, //  1
+	
+	{ "sl1_mortal_kombat_u3_sound_rom.u3",			0x040000, 0xc615844c, 4 | BRF_PRG | BRF_ESS  }, // 2 Sound CPU
+	
+	{ "sl1_mortal_kombat_u12_sound_rom.u12",		0x040000, 0x258bd7f9, 2 | BRF_PRG | BRF_ESS }, //  3 ADPCM sound banks
+	{ "sl1_mortal_kombat_u13_sound_rom.u13",		0x040000, 0x7b7ec3b6, 2 | BRF_PRG | BRF_ESS }, //  4
+
+	{ "l1_mortal_kombat_t-unit_ug14_game_rom.ug14",	0x080000, 0x9e00834e, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x00, 0) }, //  5 GFX
+	{ "l1_mortal_kombat_t-unit_uj14_game_rom.uj14",	0x080000, 0xf4b0aaa7, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x00, 1) }, //  6
+	{ "l1_mortal_kombat_t-unit_ug19_game_rom.ug19",	0x080000, 0x2d8c7ba1, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x00, 2) }, //  7
+	{ "l1_mortal_kombat_t-unit_uj19_game_rom.uj19",	0x080000, 0x33b9b7a4, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x00, 3) }, //  8
+
+	{ "l1_mortal_kombat_t-unit_ug16_game_rom.ug16",	0x080000, 0x52c9d1e5, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x02, 0) }, //  9
+	{ "l1_mortal_kombat_t-unit_uj16_game_rom.uj16",	0x080000, 0xc94c58cf, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x02, 1) }, // 10
+	{ "l1_mortal_kombat_t-unit_ug20_game_rom.ug20",	0x080000, 0x2f7e55d3, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x02, 2) }, // 11
+	{ "l1_mortal_kombat_t-unit_uj20_game_rom.uj20",	0x080000, 0xeae96df0, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x02, 3) }, // 12
+
+	{ "mortal_kombat_plus.ug17",					0x080000, 0x44b5de0e, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x04, 0) }, // 13
+	{ "mortal_kombat_plus.uj17",					0x080000, 0xc69cd46c, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x04, 1) }, // 14
+	{ "mortal_kombat_plus.ug22",					0x080000, 0xe742a405, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x04, 2) }, // 15
+	{ "mortal_kombat_plus.uj22",					0x080000, 0x34110899, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x04, 3) }, // 16
+};
+
+STD_ROM_PICK(mkplus)
+STD_ROM_FN(mkplus)
+
+struct BurnDriver BurnDrvMkplus = {
+	"mkplus", "mk", NULL, NULL, "2020",
+	"Mortal Kombat Plus (Hack, BUILD 5.0.0741)\0", NULL, "Paul", "Midway T-Unit",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_CLONE | BDF_HACK, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
+	NULL, mkplusRomInfo, mkplusRomName, NULL, NULL, NULL, NULL, MkInputInfo, MkDIPInfo,
+	MkInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo mktturboRomDesc[] = {
@@ -586,7 +625,7 @@ struct BurnDriver BurnDrvMktturbo = {
 	BDF_GAME_WORKING | BDF_CLONE | BDF_HACK, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mktturboRomInfo, mktturboRomName, NULL, NULL, NULL, NULL, MkInputInfo, MkDIPInfo,
     MkTturboInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo mk2RomDesc[] = {
@@ -633,7 +672,7 @@ struct BurnDriver BurnDrvMk2 = {
 	BDF_GAME_WORKING, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mk2RomInfo, mk2RomName, NULL, NULL, NULL, NULL, Mk2InputInfo, Mk2DIPInfo,
     Mk2Init, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo mk2r32eRomDesc[] = {
@@ -673,7 +712,7 @@ struct BurnDriver BurnDrvMk2r32e = {
 	BDF_GAME_WORKING | BDF_CLONE, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mk2r32eRomInfo, mk2r32eRomName, NULL, NULL, NULL, NULL, Mk2InputInfo, Mk2DIPInfo,
     Mk2Init, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo mk2r31eRomDesc[] = {
@@ -713,7 +752,7 @@ struct BurnDriver BurnDrvMk2r31e = {
 	BDF_GAME_WORKING | BDF_CLONE, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mk2r31eRomInfo, mk2r31eRomName, NULL, NULL, NULL, NULL, Mk2InputInfo, Mk2DIPInfo,
     Mk2Init, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo mk2r30RomDesc[] = {
@@ -753,7 +792,7 @@ struct BurnDriver BurnDrvMk2r30 = {
 	BDF_GAME_WORKING | BDF_CLONE, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mk2r30RomInfo, mk2r30RomName, NULL, NULL, NULL, NULL, Mk2InputInfo, Mk2DIPInfo,
     Mk2Init, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo mk2r21RomDesc[] = {
@@ -793,7 +832,7 @@ struct BurnDriver BurnDrvMk2r21 = {
 	BDF_GAME_WORKING | BDF_CLONE, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mk2r21RomInfo, mk2r21RomName, NULL, NULL, NULL, NULL, Mk2InputInfo, Mk2DIPInfo,
     Mk2Init, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo mk2r20RomDesc[] = {
@@ -833,7 +872,7 @@ struct BurnDriver BurnDrvMk2r20 = {
 	BDF_GAME_WORKING | BDF_CLONE, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mk2r20RomInfo, mk2r20RomName, NULL, NULL, NULL, NULL, Mk2InputInfo, Mk2DIPInfo,
     Mk2Init, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo mk2r14RomDesc[] = {
@@ -873,7 +912,7 @@ struct BurnDriver BurnDrvMk2r14 = {
 	BDF_GAME_WORKING | BDF_CLONE, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mk2r14RomInfo, mk2r14RomName, NULL, NULL, NULL, NULL, Mk2InputInfo, Mk2DIPInfo,
     Mk2Init, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo mk2r11RomDesc[] = {
@@ -913,7 +952,7 @@ struct BurnDriver BurnDrvMk2r11 = {
 	BDF_GAME_WORKING | BDF_CLONE | BDF_CLONE, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mk2r11RomInfo, mk2r11RomName, NULL, NULL, NULL, NULL, Mk2InputInfo, Mk2DIPInfo,
     Mk2Init, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo mk2r42RomDesc[] = {
@@ -953,7 +992,7 @@ struct BurnDriver BurnDrvMk2r42 = {
 	BDF_GAME_WORKING | BDF_CLONE | BDF_HACK, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mk2r42RomInfo, mk2r42RomName, NULL, NULL, NULL, NULL, Mk2InputInfo, Mk2DIPInfo,
     Mk2Init, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo mk2r91RomDesc[] = {
@@ -993,7 +1032,7 @@ struct BurnDriver BurnDrvMk2r91 = {
 	BDF_GAME_WORKING | BDF_CLONE | BDF_HACK, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mk2r91RomInfo, mk2r91RomName, NULL, NULL, NULL, NULL, Mk2InputInfo, Mk2DIPInfo,
     Mk2Init, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo mk2chalRomDesc[] = {
@@ -1033,7 +1072,7 @@ struct BurnDriver BurnDrvMk2chal = {
 	BDF_GAME_WORKING | BDF_CLONE | BDF_HACK, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mk2chalRomInfo, mk2chalRomName, NULL, NULL, NULL, NULL, Mk2InputInfo, Mk2DIPInfo,
     Mk2Init, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo mk2uteRomDesc[] = {
@@ -1073,7 +1112,7 @@ struct BurnDriver BurnDrvMk2ute = {
 	BDF_GAME_WORKING | BDF_CLONE | BDF_HACK, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mk2uteRomInfo, mk2uteRomName, NULL, NULL, NULL, NULL, Mk2InputInfo, Mk2DIPInfo,
     Mk2Init, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo mk2pRomDesc[] = {
@@ -1113,7 +1152,7 @@ struct BurnDriver BurnDrvmk2p = {
 	BDF_GAME_WORKING | BDF_CLONE, 2, HARDWARE_MIDWAY_TUNIT, GBF_VSFIGHT, 0,
 	NULL, mk2pRomInfo, mk2pRomName, NULL, NULL, NULL, NULL, Mk2InputInfo, Mk2DIPInfo,
     Mk2Init, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo nbajamRomDesc[] = {
@@ -1163,7 +1202,7 @@ struct BurnDriver BurnDrvNbajam = {
 	BDF_GAME_WORKING, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
 	NULL, nbajamRomInfo, nbajamRomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamDIPInfo,
     NbajamInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo nbajamr2RomDesc[] = {
@@ -1206,7 +1245,7 @@ struct BurnDriver BurnDrvNbajamr2 = {
 	BDF_GAME_WORKING | BDF_CLONE, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
 	NULL, nbajamr2RomInfo, nbajamr2RomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamDIPInfo,
     NbajamInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo nbajamr1RomDesc[] = {
@@ -1249,7 +1288,7 @@ struct BurnDriver BurnDrvNbajamr1 = {
 	BDF_GAME_WORKING | BDF_CLONE, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
 	NULL, nbajamr1RomInfo, nbajamr1RomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamDIPInfo,
     NbajamInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static INT32 NbajampInit()
@@ -1300,7 +1339,7 @@ struct BurnDriver BurnDrvNbajamp2 = {
 	BDF_GAME_WORKING | BDF_CLONE, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
 	NULL, nbajamp2RomInfo, nbajamp2RomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamDIPInfo,
 	NbajampInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-	400, 256, 4, 3
+	TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo nbajamp1RomDesc[] = {
@@ -1343,7 +1382,7 @@ struct BurnDriver BurnDrvNbajamp1 = {
 	BDF_GAME_WORKING | BDF_CLONE, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
 	NULL, nbajamp1RomInfo, nbajamp1RomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamDIPInfo,
 	NbajampInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-	400, 256, 4, 3
+	TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo nbajamteRomDesc[] = {
@@ -1393,7 +1432,7 @@ struct BurnDriver BurnDrvNbajamte = {
 	BDF_GAME_WORKING, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
 	NULL, nbajamteRomInfo, nbajamteRomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamteDIPInfo,
     NbajamteInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo nbajamte4RomDesc[] = {
@@ -1436,7 +1475,7 @@ struct BurnDriver BurnDrvNbajamte4 = {
 	BDF_GAME_WORKING | BDF_CLONE, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
 	NULL, nbajamte4RomInfo, nbajamte4RomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamteDIPInfo,
     NbajamteInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo nbajamte3RomDesc[] = {
@@ -1479,7 +1518,7 @@ struct BurnDriver BurnDrvNbajamte3 = {
 	BDF_GAME_WORKING | BDF_CLONE, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
 	NULL, nbajamte3RomInfo, nbajamte3RomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamteDIPInfo,
     NbajamteInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo nbajamte3aRomDesc[] = {
@@ -1522,7 +1561,7 @@ struct BurnDriver BurnDrvNbajamte3a = {
 	BDF_GAME_WORKING | BDF_CLONE, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
 	NULL, nbajamte3aRomInfo, nbajamte3aRomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamteDIPInfo,
     NbajamteInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo nbajamte2RomDesc[] = {
@@ -1565,7 +1604,7 @@ struct BurnDriver BurnDrvNbajamte2 = {
 	BDF_GAME_WORKING | BDF_CLONE, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
 	NULL, nbajamte2RomInfo, nbajamte2RomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamteDIPInfo,
     NbajamteInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo nbajamte2aRomDesc[] = {
@@ -1608,7 +1647,7 @@ struct BurnDriver BurnDrvNbajamte2a = {
 	BDF_GAME_WORKING | BDF_CLONE, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
 	NULL, nbajamte2aRomInfo, nbajamte2aRomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamteDIPInfo,
 	NbajamteInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-	400, 256, 4, 3
+	TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo nbajamte1RomDesc[] = {
@@ -1651,7 +1690,7 @@ struct BurnDriver BurnDrvNbajamte1 = {
 	BDF_GAME_WORKING | BDF_CLONE, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
 	NULL, nbajamte1RomInfo, nbajamte1RomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamteDIPInfo,
 	NbajamteInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-	400, 256, 4, 3
+	TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo nbajamtep2RomDesc[] = {
@@ -1694,7 +1733,7 @@ struct BurnDriver BurnDrvNbajamtep2 = {
 	BDF_GAME_WORKING | BDF_CLONE, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
 	NULL, nbajamtep2RomInfo, nbajamtep2RomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamteDIPInfo,
 	NbajamteInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-	400, 256, 4, 3
+	TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo nbajamtenRomDesc[] = {
@@ -1737,10 +1776,10 @@ struct BurnDriver BurnDrvNbajamten = {
 	BDF_GAME_WORKING | BDF_CLONE | BDF_PROTOTYPE, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
 	NULL, nbajamtenRomInfo, nbajamtenRomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamteDIPInfo,
     NbajamteInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-    400, 256, 4, 3
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
-// NBA Jam Rewind (Hack)
+// NBA Jam Rewind (Hack, v1.1)
 // https://www.romhacking.net/hacks/6989/
 static struct BurnRomInfo nbajamreRomDesc[] = {
 	{ "nbajamre.uj12",								0x080000, 0x9b3fc483, 1 | BRF_PRG | BRF_ESS }, //  0 TMS34010
@@ -1782,7 +1821,96 @@ struct BurnDriver BurnDrvNbajamre = {
 	BDF_GAME_WORKING | BDF_CLONE | BDF_HACK, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
 	NULL, nbajamreRomInfo, nbajamreRomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamteDIPInfo,
 	NbajamteInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-	400, 256, 4, 3
+	TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
+};
+
+// NBA Rewind 4 Jam (Protection hack, v1.2)
+// Protection hacked, runs on any T-Unit board.
+static struct BurnRomInfo nbajamr4jRomDesc[] = {
+	{ "nbajamr4j.uj12",								0x080000, 0x1ef0eb74, 1 | BRF_PRG | BRF_ESS }, //  0 TMS34010
+	{ "nbajamr4j.ug12",								0x080000, 0xb2dd7831, 1 | BRF_PRG | BRF_ESS }, //  1
+
+	{ "l1_nba_jam_tournament_u3_sound_rom.u3",		0x020000, 0xd4551195, 4 | BRF_PRG | BRF_ESS  }, // 2 Sound CPU
+
+	{ "nbajamr4j.u12",								0x080000, 0xcd5d4532, 2 | BRF_PRG | BRF_ESS }, //  3 ADPCM sound banks
+	{ "nbajamr4j.u13",								0x080000, 0xc4cbede2, 2 | BRF_PRG | BRF_ESS }, //  4
+
+	{ "l1_nba_jam_tournament_game_rom_ug14.ug14",	0x080000, 0x04bb9f64, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x00, 0) }, //  5 GFX
+	{ "l1_nba_jam_tournament_game_rom_uj14.uj14",	0x080000, 0xb34b7af3, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x00, 1) }, //  6
+	{ "l1_nba_jam_tournament_game_rom_ug19.ug19",	0x080000, 0xa8f22fbb, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x00, 2) }, //  7
+	{ "l1_nba_jam_tournament_game_rom_uj19.uj19",	0x080000, 0x8130a8a2, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x00, 3) }, //  8
+
+	{ "nbajamr4j.ug16",								0x080000, 0xb9a07a6f, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x02, 0) }, //  9
+	{ "nbajamr4j.uj16",								0x080000, 0xffa7db04, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x02, 1) }, // 10
+	{ "nbajamr4j.ug20",								0x080000, 0x67c8646b, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x02, 2) }, // 11
+	{ "nbajamr4j.uj20",								0x080000, 0x71d028f8, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x02, 3) }, // 12
+
+	{ "nbajamr4j.ug17",								0x080000, 0x34c6bdb8, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x04, 0) }, // 13
+	{ "nbajamr4j.uj17",								0x080000, 0x3af5b32e, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x04, 1) }, // 14
+	{ "nbajamr4j.ug22",								0x080000, 0xd41234d2, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x04, 2) }, // 15
+	{ "nbajamr4j.uj22",								0x080000, 0x42196c84, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x04, 3) }, // 16
+
+	{ "nbajamr4j.ug18",								0x080000, 0xfe18a6ef, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x06, 0) }, // 17
+	{ "nbajamr4j.uj18",								0x080000, 0x9a6d36de, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x06, 1) }, // 18
+	{ "nbajamr4j.ug23",								0x080000, 0x8d1af1a6, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x06, 2) }, // 19
+	{ "nbajamr4j.uj23",								0x080000, 0xb5bf66f9, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x06, 3) }, // 20
+};
+
+STD_ROM_PICK(nbajamr4j)
+STD_ROM_FN(nbajamr4j)
+
+struct BurnDriver BurnDrvNbajamr4j = {
+	"nbajamr4j", "nbajamte", NULL, NULL, "2023",
+	"NBA Rewind 4 Jam (protection hack, v1.2)\0", NULL, "hack", "Midway T-Unit",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_CLONE | BDF_HACK, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
+	NULL, nbajamr4jRomInfo, nbajamr4jRomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamteDIPInfo,
+	NbajamteInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
+	TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
+};
+
+// NBA JAM Special Edition (rev 5.02 4/26/25)
+static struct BurnRomInfo nbajamseRomDesc[] = {
+	{ "l5.2__nba_jam_tournament_game_rom_uj12.uj12",	0x080000, 0x08507007, 1 | BRF_PRG | BRF_ESS }, //  0 TMS34010
+	{ "l5.2__nba_jam_tournament_game_rom_ug12.ug12",	0x080000, 0xd784608e, 1 | BRF_PRG | BRF_ESS }, //  1
+	
+	{ "l1_nba_jam_tournament_u3_sound_rom.u3",			0x020000, 0xd4551195, 4 | BRF_PRG | BRF_ESS  }, // 2 Sound CPU
+	
+	{ "l5.2_nba_jam_tournament_u12_sound_rom.u12",		0x080000, 0x7be1622b, 2 | BRF_PRG | BRF_ESS }, //  3 ADPCM sound banks
+	{ "l5.2_nba_jam_tournament_u13_sound_rom.u13",		0x080000, 0xf939bfcb, 2 | BRF_PRG | BRF_ESS }, //  4
+
+	{ "l1_nba_jam_tournament_game_rom_ug14.ug14",		0x080000, 0x04bb9f64, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x00, 0) }, //  5 GFX
+	{ "l1_nba_jam_tournament_game_rom_uj14.uj14",		0x080000, 0xb34b7af3, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x00, 1) }, //  6
+	{ "l1_nba_jam_tournament_game_rom_ug19.ug19",		0x080000, 0xa8f22fbb, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x00, 2) }, //  7
+	{ "l1_nba_jam_tournament_game_rom_uj19.uj19",		0x080000, 0x8130a8a2, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x00, 3) }, //  8
+
+	{ "l5.2__nba_jam_tournament_game_rom_ug16.ug16",	0x080000, 0xc8da980e, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x02, 0) }, //  9
+	{ "l5.2__nba_jam_tournament_game_rom_uj16.uj16",	0x080000, 0x205c5fb7, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x02, 1) }, // 10
+	{ "l5.2__nba_jam_tournament_game_rom_ug20.ug20",	0x080000, 0x9cd4f985, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x02, 2) }, // 11
+	{ "l5.2__nba_jam_tournament_game_rom_uj20.uj20",	0x080000, 0x7a47f364, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x02, 3) }, // 12
+
+	{ "l5.2__nba_jam_tournament_game_rom_ug17.ug17",	0x080000, 0x1b7ddbe9, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x04, 0) }, // 13
+	{ "l5.2__nba_jam_tournament_game_rom_uj17.uj17",	0x080000, 0xcb08465f, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x04, 1) }, // 14
+	{ "l5.2__nba_jam_tournament_game_rom_ug22.ug22",	0x080000, 0x5427ca82, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x04, 2) }, // 15
+	{ "l5.2__nba_jam_tournament_game_rom_uj22.uj22",	0x080000, 0x569b1ae5, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x04, 3) }, // 16
+	
+	{ "l5.2__nba_jam_tournament_game_rom_ug18.ug18",	0x080000, 0xa182457b, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x06, 0) }, // 17
+	{ "l5.2__nba_jam_tournament_game_rom_uj18.uj18",	0x080000, 0xed6b08a5, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x06, 1) }, // 18
+	{ "l5.2__nba_jam_tournament_game_rom_ug23.ug23",	0x080000, 0x7755db95, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x06, 2) }, // 19
+	{ "l5.2__nba_jam_tournament_game_rom_uj23.uj23",	0x080000, 0xa659b604, 3 | BRF_GRA | BRF_ESS | TUNIT_GFX(0x06, 3) }, // 20
+};
+
+STD_ROM_PICK(nbajamse)
+STD_ROM_FN(nbajamse)
+
+struct BurnDriver BurnDrvNbajamse = {
+	"nbajamse", "nbajamte", NULL, NULL, "2025",
+	"NBA JAM Special Edition (rev 5.02 4/26/25)\0", NULL, "Team Jam", "Midway T-Unit",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_CLONE, 4, HARDWARE_MIDWAY_TUNIT, GBF_SPORTSMISC, 0,
+	NULL, nbajamseRomInfo, nbajamseRomName, NULL, NULL, NULL, NULL, NbajamInputInfo, NbajamteDIPInfo,
+    NbajamteInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
+    TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 static struct BurnRomInfo jdreddpRomDesc[] = {
@@ -1832,5 +1960,5 @@ struct BurnDriver BurnDrvJdreddp = {
 	BDF_GAME_WORKING | BDF_PROTOTYPE, 3, HARDWARE_MIDWAY_TUNIT, GBF_SCRFIGHT, 0,
 	NULL, jdreddpRomInfo, jdreddpRomName, NULL, NULL, NULL, NULL, JdreddpInputInfo, JdreddpDIPInfo,
     JdreddpInit, TUnitExit, TUnitFrame, TUnitDraw, TUnitScan, &nTUnitRecalc, 0x8000,
-	400, 256, 4, 3
+	TUNIT_SCREEN_WIDTH, TUNIT_SCREEN_HEIGHT, 4, 3
 };

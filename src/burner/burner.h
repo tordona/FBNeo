@@ -25,6 +25,7 @@
 
 #include "title.h"
 #include "burn.h"
+#include "joyprocess.h"
 
 // ---------------------------------------------------------------------------
 // OS dependent functionality
@@ -72,7 +73,7 @@ typedef struct tagIMAGE {
 
 // burn/burn.cpp
 extern INT32 bRewindEnabled;
-extern INT32 nRewindMemory;
+extern INT64 nRewindMemory;
 
 
 // image.cpp
@@ -133,6 +134,8 @@ struct tIniStruct {
 };
 
 extern tIniStruct gamehw_cfg[];
+
+UINT32 GameInputGetHWFlag();
 
 void GetHistoryDatHardwareToken(char *to_string);
 
@@ -223,14 +226,15 @@ void ComputeGammaLUT();
 #define DAT_NEOGEO_ONLY			11
 #define DAT_NES_ONLY			12
 #define DAT_FDS_ONLY			13
-#define DAT_NGP_ONLY			14
-#define DAT_CHANNELF_ONLY		15
+#define DAT_SNES_ONLY			14
+#define DAT_NGP_ONLY			15
+#define DAT_CHANNELF_ONLY		16
 
 INT32 write_datfile(INT32 bType, FILE* fDat);
 INT32 create_datfile(TCHAR* szFilename, INT32 bType);
 
 // sshot.cpp
-INT32 MakeScreenShot();
+INT32 MakeScreenShot(INT32 bType);
 
 // state.cpp
 INT32 BurnStateLoadEmbed(FILE* fp, INT32 nOffset, INT32 bAll, INT32 (*pLoadGame)());
@@ -258,6 +262,7 @@ INT32 __cdecl ZipLoadOneFile(char* arcName, const char* fileName, void** Dest, I
 
 // romdata.cpp
 extern TCHAR szRomdataName[MAX_PATH];
+TCHAR* AdaptiveEncodingReads(const TCHAR* pszFileName);
 
 // ips_manager.cpp 
 void IpsPatchInit();
@@ -280,6 +285,7 @@ extern TCHAR szAppPreviewsPath[MAX_PATH];
 extern TCHAR szAppTitlesPath[MAX_PATH];
 extern TCHAR szAppCheatsPath[MAX_PATH];
 extern TCHAR szAppIpsPath[MAX_PATH];
+extern TCHAR szAppRomdataPath[MAX_PATH];
 extern TCHAR szAppIconsPath[MAX_PATH];
 extern TCHAR szAppSelectPath[MAX_PATH];
 extern TCHAR szAppVersusPath[MAX_PATH];

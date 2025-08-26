@@ -370,8 +370,6 @@ static INT32 CommonInit(INT32 nLoadType)
 
 		DrvGfxExpand(DrvGfxROM, 0x40000);
 		DrvExpandLookupTable();
-
-		k007121_init(0, (0x80000 / (8 * 8)) - 1);
 	}
 
 	HD6309Init(0);
@@ -396,6 +394,8 @@ static INT32 CommonInit(INT32 nLoadType)
 	BurnYM2203SetPSGVolume(1, 0.80);
 
 	GenericTilesInit();
+
+	k007121_init(0, (0x80000 / (8 * 8)) - 1, DrvSprRAM);
 
 	DrvDoReset(1);
 
@@ -577,7 +577,7 @@ static INT32 DrvDraw()
 	k007121_ctrl_write(0, 7, k007121_ctrl_read(0, 7) & ~8); // sprites: disable screen flipping
 
 	if (nBurnLayer & 1) draw_layer(0, 0);
-	if (nSpriteEnable & 1) k007121_draw(0, pTransDraw, DrvGfxROM, DrvSprTranspLut, DrvSprRAM, (k007121_ctrl_read(0, 6) & 0x30) * 2, 40,16, 0, (k007121_ctrl_read(0, 3) & 0x40) >> 5, 0);
+	if (nSpriteEnable & 1) k007121_draw(0, pTransDraw, DrvGfxROM, DrvSprTranspLut, (k007121_ctrl_read(0, 6) & 0x30) * 2, 40,16, 0, (k007121_ctrl_read(0, 3) & 0x20) >> 4, 0);
 	if (nBurnLayer & 2) draw_layer(0, 1);
 	if (nBurnLayer & 4) draw_layer(1, 0);
 
@@ -627,6 +627,7 @@ static INT32 DrvFrame()
 
 		if (i == nInterleave-1) {
 			if (k007121_ctrl_read(0, 7) & 0x02) HD6309SetIRQLine(0x00, CPU_IRQSTATUS_HOLD);
+			k007121_buffer(0);
 		}
 	}
 
@@ -758,6 +759,34 @@ struct BurnDriver BurnDrvLabyrunrk = {
 	NULL, NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED | BDF_HISCORE_SUPPORTED, 2, HARDWARE_PREFIX_KONAMI, GBF_RUNGUN, 0,
 	NULL, labyrunrkRomInfo, labyrunrkRomName, NULL, NULL, NULL, NULL, LabyrunrInputInfo, LabyrunrDIPInfo,
+	DrvInit, DrvExit, DrvFrame,DrvDraw, DrvScan, &DrvRecalc, 0x800,
+	224, 280, 3, 4
+};
+
+
+// Labyrinth Runner (World Ver. F)
+
+static struct BurnRomInfo labyrunrfRomDesc[] = {
+	{ "771k04.10f",		0x10000, 0x86a36806, 1 | BRF_PRG | BRF_ESS }, //  0 HD6309 Code
+	{ "771k03.8f",		0x10000, 0x6c073295, 1 | BRF_PRG | BRF_ESS }, //  1
+
+	{ "771d01a.13a",	0x10000, 0x0cd1ed1a, 2 | BRF_GRA },           //  2 Graphics Tiles
+	{ "771d01c.13a",	0x10000, 0xd75521fe, 2 | BRF_GRA },           //  3
+	{ "771d01b",		0x10000, 0x07f2a71c, 2 | BRF_GRA },           //  4
+	{ "771d01d",		0x10000, 0xf6810a49, 2 | BRF_GRA },           //  5
+
+	{ "771d02.08d",		0x00100, 0x3d34bb5a, 3 | BRF_GRA },           //  6 Sprite Color Lookup Tables
+};
+
+STD_ROM_PICK(labyrunrf)
+STD_ROM_FN(labyrunrf)
+
+struct BurnDriver BurnDrvLabyrunrf = {
+	"labyrunrf", "tricktrp", NULL, NULL, "1987",
+	"Labyrinth Runner (World Ver. F)\0", NULL, "Konami", "GX771",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED | BDF_HISCORE_SUPPORTED, 2, HARDWARE_PREFIX_KONAMI, GBF_RUNGUN, 0,
+	NULL, labyrunrfRomInfo, labyrunrfRomName, NULL, NULL, NULL, NULL, LabyrunrInputInfo, LabyrunrDIPInfo,
 	DrvInit, DrvExit, DrvFrame,DrvDraw, DrvScan, &DrvRecalc, 0x800,
 	224, 280, 3, 4
 };

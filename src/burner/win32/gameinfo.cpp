@@ -253,6 +253,9 @@ static int GameInfoInit()
 	if (bBracket) {
 		_stprintf(szItemText + _tcslen(szItemText), _T(")"));
 	}
+#ifdef FBNEO_DEBUG
+	_stprintf(szItemText, _T("%s\t(%S)"), szItemText, BurnDrvGetSourcefile());
+#endif
 	SendMessage(hInfoControl, WM_SETTEXT, (WPARAM)0, (LPARAM)szItemText);
 
 	//Display the rom info
@@ -886,6 +889,11 @@ static INT_PTR CALLBACK DialogProc(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lP
 	if (Msg == WM_NOTIFY) {
 		NMHDR* pNmHdr = (NMHDR*)lParam;
 
+		if (pNmHdr->code == HDN_ENDTRACK) {
+			InvalidateRect(GetDlgItem(hGameInfoDlg, IDC_LIST1), NULL, TRUE);
+			return TRUE;
+		}
+
 		if (pNmHdr->code == TCN_SELCHANGE) {
 			int TabPage = TabCtrl_GetCurSel(hTabControl);
 
@@ -935,11 +943,7 @@ int GameInfoDialogCreate(HWND hParentWND, int nDrvSel)
 	bGameInfoOpen = true;
 	nGiDriverSelected = nDrvSel;
 
-#if defined (_UNICODE)
-	hRiched = LoadLibrary(L"RICHED20.DLL");
-#else
-	hRiched = LoadLibrary("RICHED20.DLL");
-#endif
+	hRiched = LoadLibrary(_T("RICHED20.DLL"));
 
 	if (hRiched) {
 		hParent = hParentWND;

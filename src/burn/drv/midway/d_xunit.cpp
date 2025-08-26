@@ -8,6 +8,15 @@
 #include "burn_pal.h"
 #include "burn_gun.h"
 
+#define XUNIT_SCREEN_WIDTH  400
+// standalone builds have an issue where filters don't work properly
+// if height is not divisible by 4
+#ifndef __LIBRETRO__
+#define XUNIT_SCREEN_HEIGHT 256
+#else
+#define XUNIT_SCREEN_HEIGHT 254
+#endif
+
 static UINT8 *AllMem;
 static UINT8 *AllRam;
 static UINT8 *RamEnd;
@@ -67,8 +76,8 @@ static struct BurnInputInfo RevxInputList[] = {
 	{"Service",			BIT_DIGITAL,	DrvJoy3 + 6,	"service"	},
 	{"Service Mode",	BIT_DIGITAL,	DrvJoy3 + 4,	"diag"		},
 	{"Tilt",			BIT_DIGITAL,	DrvJoy3 + 3,	"tilt"		},
-	{"Volume Down",		BIT_DIGITAL,	DrvJoy3 + 11,	"p1 fire 7"	},
-	{"Volume Up",		BIT_DIGITAL,	DrvJoy3 + 12,	"p1 fire 8"	},
+	{"Volume Down",		BIT_DIGITAL,	DrvJoy3 + 11,	"volumedown"},
+	{"Volume Up",		BIT_DIGITAL,	DrvJoy3 + 12,	"volumeup"	},
 	{"Dip A",			BIT_DIPSWITCH,	DrvDips + 0,	"dip"		},
 	{"Dip B",			BIT_DIPSWITCH,	DrvDips + 1,	"dip"		},
 	{"Dip C",			BIT_DIPSWITCH,	DrvDips + 2,	"dip"		},
@@ -948,7 +957,7 @@ struct BurnDriver BurnDrvRevx = {
 	BDF_GAME_WORKING, 3, HARDWARE_MIDWAY_XUNIT, GBF_SHOOT, 0,
 	NULL, revxRomInfo, revxRomName, NULL, NULL, NULL, NULL, RevxInputInfo, RevxDIPInfo,
 	DrvInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &BurnRecalc, 0x8000,
-	400, 256, 4, 3
+	XUNIT_SCREEN_WIDTH, XUNIT_SCREEN_HEIGHT, 4, 3
 };
 
 
@@ -1019,5 +1028,5 @@ struct BurnDriver BurnDrvRevxp5 = {
 	BDF_GAME_WORKING | BDF_CLONE | BDF_PROTOTYPE, 3, HARDWARE_MIDWAY_XUNIT, GBF_SHOOT, 0,
 	NULL, revxp5RomInfo, revxp5RomName, NULL, NULL, NULL, NULL, RevxInputInfo, RevxDIPInfo,
 	DrvInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &BurnRecalc, 0x8000,
-	400, 256, 4, 3
+	XUNIT_SCREEN_WIDTH, XUNIT_SCREEN_HEIGHT, 4, 3
 };

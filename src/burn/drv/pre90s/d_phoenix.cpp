@@ -1467,7 +1467,7 @@ static struct BurnRomInfo phoenixiRomDesc[] = {
 	{ "0205.bin",		0x0800, 0x1ff3a982, 1 | BRF_PRG | BRF_ESS }, //  4
 	{ "0206.bin",		0x0800, 0x8c83bff7, 1 | BRF_PRG | BRF_ESS }, //  5
 	{ "0207.bin",		0x0800, 0x805ec2e8, 1 | BRF_PRG | BRF_ESS }, //  6
-	// 0208.bin wasn't readable, but very probably matches the one from condor
+    // 0208.bin wasn't readable, but very probably matches the one from condor
 	{ "cond08c.bin",	0x0800, 0x1edebb45, 1 | BRF_PRG | BRF_ESS }, //  7
 	
 	{ "0209.bin",		0x0800, 0x3c7e623f, 2 | BRF_GRA },           //  8 Background Tiles
@@ -1567,6 +1567,7 @@ struct BurnDriver BurnDrvCondor = {
 
 
 // Condor (S C Novar bootleg of Phoenix)
+// PCB is marked: "NOVARMATIC" and "13200"
 
 static struct BurnRomInfo condornRomDesc[] = {
 	{ "1.bin",			0x0800, 0xc0f73929, 1 | BRF_PRG | BRF_ESS }, //  0 Z80 Code
@@ -1597,6 +1598,81 @@ struct BurnDriver BurnDrvCondorn = {
 	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED | BDF_BOOTLEG | BDF_HISCORE_SUPPORTED, 2, HARDWARE_MISC_PRE90S, GBF_SHOOT, 0,
 	NULL, condornRomInfo, condornRomName, NULL, NULL, NULL, NULL, CondorInputInfo, CondorDIPInfo,
 	SinglePromInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x80,
+	208, 256, 3, 4
+};
+
+
+// Condor (Valadon Automation bootleg of Phoenix)
+// PCB marked "VA 250.291"
+
+static struct BurnRomInfo condorvaRomDesc[] = {
+	{ "1.1i",			0x0800, 0x351984b6, 1 | BRF_PRG | BRF_ESS }, //  0 Z80 Code
+	{ "2.1h",			0x0800, 0xcbf2d29e, 1 | BRF_PRG | BRF_ESS }, //  1
+	{ "3.1f",			0x0800, 0xb6f3e6ec, 1 | BRF_PRG | BRF_ESS }, //  2
+	{ "4.1e",			0x0800, 0x104cb55c, 1 | BRF_PRG | BRF_ESS }, //  3
+	{ "5.1d",			0x0800, 0x1a1ce0d0, 1 | BRF_PRG | BRF_ESS }, //  4
+	{ "6.1c",			0x0800, 0x0de92138, 1 | BRF_PRG | BRF_ESS }, //  5
+	{ "7.1b",			0x0800, 0xbbf12d54, 1 | BRF_PRG | BRF_ESS }, //  6
+	{ "7.1a",			0x0800, 0xe9816604, 1 | BRF_PRG | BRF_ESS }, //  7
+
+	{ "0a.2f",			0x0800, 0x3c7e623f, 2 | BRF_GRA },           //  8 Background Tiles
+	{ "1a.2e",			0x0800, 0x59916d3b, 2 | BRF_GRA },           //  9
+
+	{ "0b.4f",			0x0800, 0x53c52eb0, 3 | BRF_GRA },           // 10 Foreground Tiles
+	{ "1b.4e",			0x0800, 0xeba42f0f, 3 | BRF_GRA },           // 11
+
+	{ "sn74s471.b9",	0x0100, 0xc68a49bc, 4 | BRF_GRA },           // 12 Color Proms
+};
+
+STD_ROM_PICK(condorva)
+STD_ROM_FN(condorva)
+
+struct BurnDriver BurnDrvCondorva = {
+	"condorva", "phoenix", NULL, NULL, "1980",
+	"Condor (Valadon Automation bootleg of Phoenix)\0", NULL, "bootleg (Valadon Automation)", "Miscellaneous",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED | BDF_BOOTLEG | BDF_HISCORE_SUPPORTED, 2, HARDWARE_MISC_PRE90S, GBF_SHOOT, 0,
+	NULL, condorvaRomInfo, condorvaRomName, NULL, NULL, NULL, NULL, CondorInputInfo, PhoenixDIPInfo,
+	SinglePromInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x80,
+	208, 256, 3, 4
+};
+
+
+// Condor (Bem Mi italy bootleg of Phoenix)
+// It enter in game straight away, seem sort of freeplay
+// It show "BEM Mi Italy" when the game is over 
+// f205v id 1123
+
+static struct BurnRomInfo condorbemRomDesc[] = {
+	{ "cd0.a5",			0x0800, 0xd260204a, 1 | BRF_PRG | BRF_ESS }, //  0 Z80 Code
+	{ "cd1.a6",			0x0800, 0x440d56e8, 1 | BRF_PRG | BRF_ESS }, //  1
+	{ "cd2.a7",			0x0800, 0x8c7e30e0, 1 | BRF_PRG | BRF_ESS }, //  2
+	{ "cd3.a8",			0x0800, 0x4364e146, 1 | BRF_PRG | BRF_ESS }, //  3
+	{ "cd4.a9",			0x0800, 0x1ff3a982, 1 | BRF_PRG | BRF_ESS }, //  4
+	{ "cd5.a10",		0x0800, 0x8c83bff7, 1 | BRF_PRG | BRF_ESS }, //  5
+	{ "cd6.a11",		0x0800, 0x805ec2e8, 1 | BRF_PRG | BRF_ESS }, //  6
+	{ "cd7.a12",		0x0800, 0x1edebb45, 1 | BRF_PRG | BRF_ESS }, //  7
+
+	{ "cd8.b7",			0x0800, 0x3c7e623f, 2 | BRF_GRA },           //  8 Background Tiles
+	{ "cd9.b8",			0x0800, 0x98019afa, 2 | BRF_GRA },           //  9
+
+	{ "cd10.b7",		0x0800, 0x53c52eb0, 3 | BRF_GRA },           // 10 Foreground Tiles
+	{ "cd11.d8",		0x0800, 0xeba42f0f, 3 | BRF_GRA },           // 11
+
+	{ "mmi6301.ic40",	0x0100, 0x79350b25, 4 | BRF_GRA },           // 12 Color Proms
+	{ "mmi6301.ic41",	0x0100, 0xe176b768, 4 | BRF_GRA },           // 13
+};
+
+STD_ROM_PICK(condorbem)
+STD_ROM_FN(condorbem)
+
+struct BurnDriver BurnDrvCondorbem = {
+	"condorbem", "phoenix", NULL, NULL, "1981",
+	"Condor (BEM Mi Italy bootleg of Phoenix)\0", NULL, "bootleg (BEM Mi Italy)", "Miscellaneous",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED | BDF_BOOTLEG | BDF_HISCORE_SUPPORTED, 2, HARDWARE_MISC_PRE90S, GBF_SHOOT, 0,
+	NULL, condorbemRomInfo, condorbemRomName, NULL, NULL, NULL, NULL, CondorInputInfo, CondorDIPInfo,
+	PhoenixInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x80,
 	208, 256, 3, 4
 };
 
@@ -1925,6 +2001,42 @@ struct BurnDriver BurnDrvAvefenixl = {
 };
 
 
+// Fenix (Explomatic, Spanish bootleg of Phoenix)
+
+static struct BurnRomInfo fenixexplRomDesc[] = {
+	{ "fe1.a1",		0x0800, 0xb04260e9, 1 | BRF_PRG | BRF_ESS }, //  0 i8085 Code
+	{ "fe2.a2",		0x0800, 0x25a2e4bd, 1 | BRF_PRG | BRF_ESS }, //  1
+	{ "fe3.a3",		0x0800, 0xcbbb8839, 1 | BRF_PRG | BRF_ESS }, //  2
+	{ "fe4.a4",		0x0800, 0xd4b6b69f, 1 | BRF_PRG | BRF_ESS }, //  3
+	{ "fe5.a5",		0x0800, 0x74b1cf66, 1 | BRF_PRG | BRF_ESS }, //  4
+	{ "fe6.a6",		0x0800, 0xac5e9ec1, 1 | BRF_PRG | BRF_ESS }, //  5
+	{ "fe7.a7",		0x0800, 0x2eab35b4, 1 | BRF_PRG | BRF_ESS }, //  6
+	{ "fe8.a8",		0x0800, 0xf15c439d, 1 | BRF_PRG | BRF_ESS }, //  7
+
+	{ "ic23.d3",	0x0800, 0x3c7e623f, 2 | BRF_GRA },           //  8 Background Tiles
+	{ "ic24.d4",	0x0800, 0x59916d3b, 2 | BRF_GRA },           //  9
+
+	{ "ic39.b3",	0x0800, 0xbb0525ed, 3 | BRF_GRA },           // 10 Foreground Tiles
+	{ "ic40.b4",	0x0800, 0x4178aa4f, 3 | BRF_GRA },           // 11
+
+	{ "6301.ic40",	0x0100, 0x79350b25, 4 | BRF_GRA },           // 12 Color Proms
+	{ "6301.ic41",	0x0100, 0xe176b768, 4 | BRF_GRA },           // 13
+};
+
+STD_ROM_PICK(fenixexpl)
+STD_ROM_FN(fenixexpl)
+
+struct BurnDriver BurnDrvFenixexpl = {
+	"fenixexpl", "phoenix", NULL, NULL, "1980",
+	"Fenix (Explomatic, Spanish bootleg of Phoenix)\0", NULL, "bootleg (Explomatic)", "Miscellaneous",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_BOOTLEG | BDF_ORIENTATION_FLIPPED, 2, HARDWARE_MISC_PRE90S, GBF_SHOOT, 0,
+	NULL, fenixexplRomInfo, fenixexplRomName, NULL, NULL, NULL, NULL, PhoenixInputInfo, PhoenixDIPInfo,
+	PhoenixInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x80,
+	208, 256, 3, 4
+};
+
+
 // Griffon (Videotron bootleg of Phoenix)
 // verified single PCB, single PROM
 
@@ -1979,8 +2091,8 @@ static struct BurnRomInfo nextfaseRomDesc[] = {
 	{ "nf09.bin",		0x0800, 0xbacbfa88, 3 | BRF_GRA },           // 10 Foreground Tiles
 	{ "nf10.bin",		0x0800, 0x3143a9ee, 3 | BRF_GRA },           // 11
 
-	{ "mmi6301.ic40",	0x0100, 0x79350b25, 4 | BRF_GRA },           // 12 Color Proms
-	{ "mmi6301.ic41",	0x0100, 0xe176b768, 4 | BRF_GRA },           // 13
+	{ "nf.ic40",		0x0100, 0x725747be, 4 | BRF_GRA },           // 12 Color Proms
+	{ "nf.ic41",		0x0100, 0xa91055ab, 4 | BRF_GRA },           // 13
 };
 
 STD_ROM_PICK(nextfase)
@@ -2069,7 +2181,7 @@ struct BurnDriver BurnDrvPhoenixbl = {
 };
 
 
-// Phoenix (Assa, Spanish bootleg)
+// Phoenix (Assa, Spanish bootleg, set 1)
 
 static struct BurnRomInfo phoenixassRomDesc[] = {
 	{ "00-811.ic45",	0x0800, 0x5b8c55a8, 1 | BRF_PRG | BRF_ESS }, //  0 i8085 Code
@@ -2096,10 +2208,50 @@ STD_ROM_FN(phoenixass)
 
 struct BurnDriver BurnDrvPhoenixass = {
 	"phoenixass", "phoenix", NULL, NULL, "1981",
-	"Phoenix (Assa, Spanish bootleg)\0", NULL, "bootleg (Assa)", "Miscellaneous",
+	"Phoenix (Assa, Spanish bootleg, set 1)\0", NULL, "bootleg (Assa)", "Miscellaneous",
 	NULL, NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED | BDF_BOOTLEG | BDF_HISCORE_SUPPORTED, 2, HARDWARE_MISC_PRE90S, GBF_SHOOT, 0,
 	NULL, phoenixassRomInfo, phoenixassRomName, NULL, NULL, NULL, NULL, PhoenixInputInfo, PhoenixDIPInfo,
+	PhoenixInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x80,
+	208, 256, 3, 4
+};
+
+
+// Phoenix (Assa, Spanish bootleg, set 2)
+// main PCB is marked: "assa 811" and "PL-01" on component side
+// ROMs PCB is marked: "PL-02" on component side
+// main PCB is labelled: "N.208" on component side
+// f205v id 1746
+
+static struct BurnRomInfo phoenixass2RomDesc[] = {
+	{ "00-811.ic45",	0x0800, 0x5b8c55a8, 1 | BRF_PRG | BRF_ESS }, //  0 i8085 Code
+	{ "01-811.ic46",	0x0800, 0xdbc942fa, 1 | BRF_PRG | BRF_ESS }, //  1
+	{ "02-811.ic47",	0x0800, 0xcbbb8839, 1 | BRF_PRG | BRF_ESS }, //  2
+	{ "03-811.ic48",	0x0800, 0x044ffd3e, 1 | BRF_PRG | BRF_ESS }, //  3
+	{ "04-811.ic49",	0x0800, 0x1a1ce0d0, 1 | BRF_PRG | BRF_ESS }, //  4
+	{ "05-811.ic50",	0x0800, 0xac5e9ec1, 1 | BRF_PRG | BRF_ESS }, //  5
+	{ "06-811.ic51",	0x0800, 0x2eab35b4, 1 | BRF_PRG | BRF_ESS }, //  6
+	{ "07-811.ic52",	0x0800, 0x15a02d87, 1 | BRF_PRG | BRF_ESS }, //  7
+
+	{ "10-811.ic23",	0x0800, 0x3c7e623f, 2 | BRF_GRA },           //  8 Background Tiles
+	{ "11-811.ic24",	0x0800, 0x59916d3b, 2 | BRF_GRA },           //  9
+
+	{ "08-811.ic39",	0x0800, 0xbb0525ed, 3 | BRF_GRA },           // 10 Foreground Tiles
+	{ "09-811.ic40",	0x0800, 0x4178aa4f, 3 | BRF_GRA },           // 11
+
+	{ "dm74s287n.ic41",	0x0100, 0x7c9f2e00, 4 | BRF_GRA },           // 12 Color Proms
+	{ "dm74s287n.ic40",	0x0100, 0xe176b768, 4 | BRF_GRA },           // 13
+};
+
+STD_ROM_PICK(phoenixass2)
+STD_ROM_FN(phoenixass2)
+
+struct BurnDriver BurnDrvPhoenixass2 = {
+	"phoenixass2", "phoenix", NULL, NULL, "1981",
+	"Phoenix (Assa, Spanish bootleg, set 2)\0", NULL, "bootleg (Assa)", "Miscellaneous",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED | BDF_BOOTLEG | BDF_HISCORE_SUPPORTED, 2, HARDWARE_MISC_PRE90S, GBF_SHOOT, 0,
+	NULL, phoenixass2RomInfo, phoenixass2RomName, NULL, NULL, NULL, NULL, PhoenixInputInfo, PhoenixDIPInfo,
 	PhoenixInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x80,
 	208, 256, 3, 4
 };
@@ -2123,8 +2275,8 @@ static struct BurnRomInfo pleiadsRomDesc[] = {
 	{ "ic39.bin",		0x0800, 0x85866607, 3 | BRF_GRA },           // 10 Foreground Tiles
 	{ "ic40.bin",		0x0800, 0xa841d511, 3 | BRF_GRA },           // 11
 
-	{ "7611-5.33",		0x0100, 0xe38eeb83, 4 | BRF_GRA },           // 12 Color Proms
-	{ "7611-5.26",		0x0100, 0x7a1bcb1e, 4 | BRF_GRA },           // 13
+	{ "7611-5.26",		0x0100, 0x7a1bcb1e, 4 | BRF_GRA },           // 12 Color proms
+	{ "7611-5.33",		0x0100, 0xe38eeb83, 4 | BRF_GRA },           // 13
 };
 
 STD_ROM_PICK(pleiads)
@@ -2141,37 +2293,115 @@ struct BurnDriver BurnDrvPleiads = {
 };
 
 
-// Pleiads (bootleg set 2)
+// Pleiads (Centuri)
 
-static struct BurnRomInfo pleiadsb2RomDesc[] = {
-	{ "ic47.r1",		0x0800, 0xfa98cb73, 1 | BRF_PRG | BRF_ESS }, //  0 i8085 Code
-	{ "ic48.r2",		0x0800, 0xb254217c, 1 | BRF_PRG | BRF_ESS }, //  1
-	{ "ic47.bin",		0x0800, 0x0951829e, 1 | BRF_PRG | BRF_ESS }, //  2
-	{ "ic48.bin",		0x0800, 0x4972f5ce, 1 | BRF_PRG | BRF_ESS }, //  3
-	{ "ic51.r5",		0x0800, 0x49c629bc, 1 | BRF_PRG | BRF_ESS }, //  4
+static struct BurnRomInfo pleiadceRomDesc[] = {
+	{ "pleiades.47",	0x0800, 0x711e2ba0, 1 | BRF_PRG | BRF_ESS }, //  0 i8085 Code
+	{ "pleiades.48",	0x0800, 0x93a36943, 1 | BRF_PRG | BRF_ESS }, //  1
+	{ "ic47.bin",		0x0800, 0x87e700bb, 1 | BRF_PRG | BRF_ESS }, //  2
+	{ "pleiades.50",	0x0800, 0x5a9beba0, 1 | BRF_PRG | BRF_ESS }, //  3
+	{ "pleiades.51",	0x0800, 0x1d828719, 1 | BRF_PRG | BRF_ESS }, //  4
 	{ "ic50.bin",		0x0800, 0xf1a8a00d, 1 | BRF_PRG | BRF_ESS }, //  5
-	{ "ic53.r7",		0x0800, 0x037b319c, 1 | BRF_PRG | BRF_ESS }, //  6
-	{ "ic52.bin",		0x0800, 0xb3db08c2, 1 | BRF_PRG | BRF_ESS }, //  7
+	{ "pleiades.53",	0x0800, 0x037b319c, 1 | BRF_PRG | BRF_ESS }, //  6
+	{ "pleiades.54",	0x0800, 0xca264c7c, 1 | BRF_PRG | BRF_ESS }, //  7
 
-	{ "ic23.bin",		0x0800, 0x4e30f9e7, 2 | BRF_GRA },           //  8 Background Tiles
-	{ "ic24.bin",		0x0800, 0x5188fc29, 2 | BRF_GRA },           //  9
+	{ "pleiades.45",	0x0800, 0x8dbd3785, 2 | BRF_GRA },           //  8 Background Tiles
+	{ "pleiades.44",	0x0800, 0x0db3e436, 2 | BRF_GRA },           //  9
 
 	{ "ic39.bin",		0x0800, 0x85866607, 3 | BRF_GRA },           // 10 Foreground Tiles
 	{ "ic40.bin",		0x0800, 0xa841d511, 3 | BRF_GRA },           // 11
 
-	{ "7611-5.26",		0x0100, 0x7a1bcb1e, 4 | BRF_GRA },           // 12 Color Proms
+	{ "7611-5.26",		0x0100, 0x7a1bcb1e, 4 | BRF_GRA },           // 12 Color proms
 	{ "7611-5.33",		0x0100, 0xe38eeb83, 4 | BRF_GRA },           // 13
 };
 
-STD_ROM_PICK(pleiadsb2)
-STD_ROM_FN(pleiadsb2)
+STD_ROM_PICK(pleiadce)
+STD_ROM_FN(pleiadce)
 
-struct BurnDriver BurnDrvPleiadsb2 = {
-	"pleiadsb2", "pleiads", NULL, NULL, "1981",
-	"Pleiads (bootleg set 2)\0", NULL, "bootleg (ESG)", "Miscellaneous",
+struct BurnDriver BurnDrvPleiadce = {
+	"pleiadce", "pleiads", NULL, NULL, "1981",
+	"Pleiads (Centuri)\0", NULL, "Tehkan (Centuri license)", "Miscellaneous",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED | BDF_HISCORE_SUPPORTED, 2, HARDWARE_MISC_PRE90S, GBF_SHOOT, 0,
+	NULL, pleiadceRomInfo, pleiadceRomName, NULL, NULL, NULL, NULL, PhoenixInputInfo, PleiadceDIPInfo,
+	PleiadsInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x100,
+	208, 256, 3, 4
+};
+
+
+// Pleiads (Irecsa, set 1)
+
+static struct BurnRomInfo pleiadsiRomDesc[] = {
+	{ "1 2716.bin",		0x0800, 0x9bbef607, 1 | BRF_PRG | BRF_ESS }, 	//  0 i8085 Code
+	{ "2 2716.bin",		0x0800, 0xe2b5b8cd, 1 | BRF_PRG | BRF_ESS }, 	//  1
+	{ "3 2716.bin",		0x0800, 0x87e700bb, 1 | BRF_PRG | BRF_ESS }, 	//  2
+	{ "4 2716.bin",		0x0800, 0xca14fe4a, 1 | BRF_PRG | BRF_ESS }, 	//  3
+	{ "5 2716.bin",		0x0800, 0x9dc73e63, 1 | BRF_PRG | BRF_ESS }, 	//  4
+	{ "6 2716.bin",		0x0800, 0xf1a8a00d, 1 | BRF_PRG | BRF_ESS }, 	//  5
+	{ "7 2716.bin",		0x0800, 0x6f56f317, 1 | BRF_PRG | BRF_ESS }, 	//  6
+	{ "8 2716.bin",		0x0800, 0xca264c7c, 1 | BRF_PRG | BRF_ESS }, 	//  7
+
+	{ "11 2716.bin",	0x0800, 0x8dbd3785, 2 | BRF_GRA },           	//  8 Background Tiles
+	{ "12 2716.bin",	0x0800, 0x0db3e436, 2 | BRF_GRA },           	//  9
+
+	{ "9 2716.bin",		0x0800, 0x85866607, 3 | BRF_GRA },           	// 10 Foreground Tiles
+	{ "10 2716.bin",	0x0800, 0xa841d511, 3 | BRF_GRA },           	// 11
+
+	// not present in dump, assuming to be the same, matches screenshots, note reverse order to most sets, same as pleiadsb2.
+	{ "7611-5.26",		0x0100, 0x7a1bcb1e, 4 | BRF_GRA },           	// 12 Color Proms
+	{ "7611-5.33",		0x0100, 0xe38eeb83, 4 | BRF_GRA },           	// 13
+	
+	{ "7910",			0x0800, 0x00000000, 5 | BRF_OPT | BRF_NODUMP }, // 14 Epson melody IC
+};
+
+STD_ROM_PICK(pleiadsi)
+STD_ROM_FN(pleiadsi)
+
+struct BurnDriver BurnDrvPleiadsi = {
+	"pleiadsi", "pleiads", NULL, NULL, "1981",
+	"Pleiads (Irecsa, set 1)\0", NULL, "Tehkan (Irecsa license)", "Miscellaneous",
 	NULL, NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED | BDF_BOOTLEG | BDF_HISCORE_SUPPORTED, 2, HARDWARE_MISC_PRE90S, GBF_SHOOT, 0,
-	NULL, pleiadsb2RomInfo, pleiadsb2RomName, NULL, NULL, NULL, NULL, PleiadsInputInfo, PleiadsDIPInfo,
+	NULL, pleiadsiRomInfo, pleiadsiRomName, NULL, NULL, NULL, NULL, PhoenixInputInfo, PleiadceDIPInfo,
+	PleiadsInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x100,
+	208, 256, 3, 4
+};
+
+
+// Pleiads (Irecsa, set 2)
+// This set shows an Irecsa patent number on the title screen.
+
+static struct BurnRomInfo pleiadsiaRomDesc[] = {
+	{ "1.ic47",			0x0800, 0x9bbef607, 1 | BRF_PRG | BRF_ESS }, 	//  0 i8085 Code
+	{ "2.ic46",			0x0800, 0xe2b5b8cd, 1 | BRF_PRG | BRF_ESS }, 	//  1
+	{ "3.ic49",			0x0800, 0x87e700bb, 1 | BRF_PRG | BRF_ESS }, 	//  2
+	{ "4.ic50",			0x0800, 0x3e0d3a6e, 1 | BRF_PRG | BRF_ESS }, 	//  3
+	{ "5.ic51",			0x0800, 0x65a58c6d, 1 | BRF_PRG | BRF_ESS }, 	//  4
+	{ "6.ic52",			0x0800, 0x44ab59c1, 1 | BRF_PRG | BRF_ESS }, 	//  5
+	{ "7.ic53",			0x0800, 0x6f56f317, 1 | BRF_PRG | BRF_ESS }, 	//  6
+	{ "8.ic54",			0x0800, 0xca264c7c, 1 | BRF_PRG | BRF_ESS }, 	//  7
+
+	{ "10.ic45",		0x0800, 0x8dbd3785, 2 | BRF_GRA },           	//  8 Background Tiles
+	{ "9.ic44",			0x0800, 0x0db3e436, 2 | BRF_GRA },           	//  9
+
+	{ "r10.c26",		0x0800, 0x85866607, 3 | BRF_GRA },           	// 10 Foreground Tiles
+	{ "r9.ic27",		0x0800, 0xa841d511, 3 | BRF_GRA },           	// 11
+
+	{ "a_hm7611.ic26",	0x0100, 0x7a1bcb1e, 4 | BRF_GRA },           	// 12 Color Proms
+	{ "b_hm7611.ic33",	0x0100, 0x304cf3f1, 4 | BRF_GRA },           	// 13
+	
+	{ "7910",			0x0800, 0x00000000, 5 | BRF_OPT | BRF_NODUMP }, // 14 Epson melody IC
+};
+
+STD_ROM_PICK(pleiadsia)
+STD_ROM_FN(pleiadsia)
+
+struct BurnDriver BurnDrvPleiadsia = {
+	"pleiadsia", "pleiads", NULL, NULL, "1981",
+	"Pleiads (Irecsa, set 2)\0", NULL, "Tehkan (Irecsa license)", "Miscellaneous",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED | BDF_BOOTLEG | BDF_HISCORE_SUPPORTED, 2, HARDWARE_MISC_PRE90S, GBF_SHOOT, 0,
+	NULL, pleiadsiaRomInfo, pleiadsiaRomName, NULL, NULL, NULL, NULL, PhoenixInputInfo, PleiadceDIPInfo,
 	PleiadsInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x100,
 	208, 256, 3, 4
 };
@@ -2213,110 +2443,37 @@ struct BurnDriver BurnDrvPleiadbl = {
 };
 
 
-// Pleiads (Centuri)
+// Pleiads (bootleg set 2)
 
-static struct BurnRomInfo pleiadceRomDesc[] = {
-	{ "pleiades.47",	0x0800, 0x711e2ba0, 1 | BRF_PRG | BRF_ESS }, //  0 i8085 Code
-	{ "pleiades.48",	0x0800, 0x93a36943, 1 | BRF_PRG | BRF_ESS }, //  1
-	{ "ic47.bin",		0x0800, 0x87e700bb, 1 | BRF_PRG | BRF_ESS }, //  2
-	{ "pleiades.50",	0x0800, 0x5a9beba0, 1 | BRF_PRG | BRF_ESS }, //  3
-	{ "pleiades.51",	0x0800, 0x1d828719, 1 | BRF_PRG | BRF_ESS }, //  4
+static struct BurnRomInfo pleiadsb2RomDesc[] = {
+	{ "ic47.r1",		0x0800, 0xfa98cb73, 1 | BRF_PRG | BRF_ESS }, //  0 i8085 Code
+	{ "ic48.r2",		0x0800, 0xb254217c, 1 | BRF_PRG | BRF_ESS }, //  1
+	{ "ic47.bin",		0x0800, 0x0951829e, 1 | BRF_PRG | BRF_ESS }, //  2
+	{ "ic48.bin",		0x0800, 0x4972f5ce, 1 | BRF_PRG | BRF_ESS }, //  3
+	{ "ic51.r5",		0x0800, 0x49c629bc, 1 | BRF_PRG | BRF_ESS }, //  4
 	{ "ic50.bin",		0x0800, 0xf1a8a00d, 1 | BRF_PRG | BRF_ESS }, //  5
-	{ "pleiades.53",	0x0800, 0x037b319c, 1 | BRF_PRG | BRF_ESS }, //  6
-	{ "pleiades.54",	0x0800, 0xca264c7c, 1 | BRF_PRG | BRF_ESS }, //  7
+	{ "ic53.r7",		0x0800, 0x037b319c, 1 | BRF_PRG | BRF_ESS }, //  6
+	{ "ic52.bin",		0x0800, 0xb3db08c2, 1 | BRF_PRG | BRF_ESS }, //  7
 
-	{ "pleiades.45",	0x0800, 0x8dbd3785, 2 | BRF_GRA },           //  8 Background Tiles
-	{ "pleiades.44",	0x0800, 0x0db3e436, 2 | BRF_GRA },           //  9
+	{ "ic23.bin",		0x0800, 0x4e30f9e7, 2 | BRF_GRA },           //  8 Background Tiles
+	{ "ic24.bin",		0x0800, 0x5188fc29, 2 | BRF_GRA },           //  9
 
 	{ "ic39.bin",		0x0800, 0x85866607, 3 | BRF_GRA },           // 10 Foreground Tiles
 	{ "ic40.bin",		0x0800, 0xa841d511, 3 | BRF_GRA },           // 11
-
-	{ "7611-5.33",		0x0100, 0xe38eeb83, 4 | BRF_GRA },           // 12 Color Proms
-	{ "7611-5.26",		0x0100, 0x7a1bcb1e, 4 | BRF_GRA },           // 13
-};
-
-STD_ROM_PICK(pleiadce)
-STD_ROM_FN(pleiadce)
-
-struct BurnDriver BurnDrvPleiadce = {
-	"pleiadce", "pleiads", NULL, NULL, "1981",
-	"Pleiads (Centuri)\0", NULL, "Tehkan (Centuri license)", "Miscellaneous",
-	NULL, NULL, NULL, NULL,
-	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED | BDF_HISCORE_SUPPORTED, 2, HARDWARE_MISC_PRE90S, GBF_SHOOT, 0,
-	NULL, pleiadceRomInfo, pleiadceRomName, NULL, NULL, NULL, NULL, PhoenixInputInfo, PleiadceDIPInfo,
-	PleiadsInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x100,
-	208, 256, 3, 4
-};
-
-
-// Pleiads (Irecsa, set 1)
-
-static struct BurnRomInfo pleiadsiRomDesc[] = {
-	{ "1 2716.bin",		0x0800, 0x9bbef607, 1 | BRF_PRG | BRF_ESS }, //  0 i8085 Code
-	{ "2 2716.bin",		0x0800, 0xe2b5b8cd, 1 | BRF_PRG | BRF_ESS }, //  1
-	{ "3 2716.bin",		0x0800, 0x87e700bb, 1 | BRF_PRG | BRF_ESS }, //  2
-	{ "4 2716.bin",		0x0800, 0xca14fe4a, 1 | BRF_PRG | BRF_ESS }, //  3
-	{ "5 2716.bin",		0x0800, 0x9dc73e63, 1 | BRF_PRG | BRF_ESS }, //  4
-	{ "6 2716.bin",		0x0800, 0xf1a8a00d, 1 | BRF_PRG | BRF_ESS }, //  5
-	{ "7 2716.bin",		0x0800, 0x6f56f317, 1 | BRF_PRG | BRF_ESS }, //  6
-	{ "8 2716.bin",		0x0800, 0xca264c7c, 1 | BRF_PRG | BRF_ESS }, //  7
-
-	{ "11 2716.bin",	0x0800, 0x8dbd3785, 2 | BRF_GRA },           //  8 Background Tiles
-	{ "12 2716.bin",	0x0800, 0x0db3e436, 2 | BRF_GRA },           //  9
-
-	{ "9 2716.bin",		0x0800, 0x85866607, 3 | BRF_GRA },           // 10 Foreground Tiles
-	{ "10 2716.bin",	0x0800, 0xa841d511, 3 | BRF_GRA },           // 11
 
 	{ "7611-5.26",		0x0100, 0x7a1bcb1e, 4 | BRF_GRA },           // 12 Color Proms
 	{ "7611-5.33",		0x0100, 0xe38eeb83, 4 | BRF_GRA },           // 13
 };
 
-STD_ROM_PICK(pleiadsi)
-STD_ROM_FN(pleiadsi)
+STD_ROM_PICK(pleiadsb2)
+STD_ROM_FN(pleiadsb2)
 
-struct BurnDriver BurnDrvPleiadsi = {
-	"pleiadsi", "pleiads", NULL, NULL, "1981",
-	"Pleiads (Irecsa, set 1)\0", NULL, "bootleg (Irecsa)", "Miscellaneous",
+struct BurnDriver BurnDrvPleiadsb2 = {
+	"pleiadsb2", "pleiads", NULL, NULL, "1981",
+	"Pleiads (bootleg set 2)\0", NULL, "bootleg (ESG)", "Miscellaneous",
 	NULL, NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED | BDF_BOOTLEG | BDF_HISCORE_SUPPORTED, 2, HARDWARE_MISC_PRE90S, GBF_SHOOT, 0,
-	NULL, pleiadsiRomInfo, pleiadsiRomName, NULL, NULL, NULL, NULL, PhoenixInputInfo, PleiadceDIPInfo,
-	PleiadsInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x100,
-	208, 256, 3, 4
-};
-
-
-// Pleiads (Irecsa, set 2)
-// This set shows an Irecsa patent number on the title screen.
-
-static struct BurnRomInfo pleiadsiaRomDesc[] = {
-	{ "1.ic47",			0x0800, 0x9bbef607, 1 | BRF_PRG | BRF_ESS }, //  0 i8085 Code
-	{ "2.ic46",			0x0800, 0xe2b5b8cd, 1 | BRF_PRG | BRF_ESS }, //  1
-	{ "3.ic49",			0x0800, 0x87e700bb, 1 | BRF_PRG | BRF_ESS }, //  2
-	{ "4.ic50",			0x0800, 0x3e0d3a6e, 1 | BRF_PRG | BRF_ESS }, //  3
-	{ "5.ic51",			0x0800, 0x65a58c6d, 1 | BRF_PRG | BRF_ESS }, //  4
-	{ "6.ic52",			0x0800, 0x44ab59c1, 1 | BRF_PRG | BRF_ESS }, //  5
-	{ "7.ic53",			0x0800, 0x6f56f317, 1 | BRF_PRG | BRF_ESS }, //  6
-	{ "8.ic54",			0x0800, 0xca264c7c, 1 | BRF_PRG | BRF_ESS }, //  7
-
-	{ "10.ic45",		0x0800, 0x8dbd3785, 2 | BRF_GRA },           //  8 Background Tiles
-	{ "9.ic44",			0x0800, 0x0db3e436, 2 | BRF_GRA },           //  9
-
-	{ "r10.c26",		0x0800, 0x85866607, 3 | BRF_GRA },           // 10 Foreground Tiles
-	{ "r9.ic27",		0x0800, 0xa841d511, 3 | BRF_GRA },           // 11
-
-	{ "a_hm7611.ic26",	0x0100, 0x7a1bcb1e, 4 | BRF_GRA },           // 12 Color Proms
-	{ "b_hm7611.ic33",	0x0100, 0x304cf3f1, 4 | BRF_GRA },           // 13
-};
-
-STD_ROM_PICK(pleiadsia)
-STD_ROM_FN(pleiadsia)
-
-struct BurnDriver BurnDrvPleiadsia = {
-	"pleiadsia", "pleiads", NULL, NULL, "1981",
-	"Pleiads (Irecsa, set 2)\0", NULL, "bootleg (Irecsa)", "Miscellaneous",
-	NULL, NULL, NULL, NULL,
-	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED | BDF_BOOTLEG | BDF_HISCORE_SUPPORTED, 2, HARDWARE_MISC_PRE90S, GBF_SHOOT, 0,
-	NULL, pleiadsiaRomInfo, pleiadsiaRomName, NULL, NULL, NULL, NULL, PhoenixInputInfo, PleiadceDIPInfo,
+	NULL, pleiadsb2RomInfo, pleiadsb2RomName, NULL, NULL, NULL, NULL, PleiadsInputInfo, PleiadsDIPInfo,
 	PleiadsInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x100,
 	208, 256, 3, 4
 };
@@ -2337,11 +2494,13 @@ static struct BurnRomInfo pleiadsnRomDesc[] = {
 	{ "11.bin",			0x0800, 0x4e30f9e7, 2 | BRF_GRA },           //  8 Background Tiles
 	{ "12.bin",			0x0800, 0x72d511fc, 2 | BRF_GRA },           //  9
 
+	// these are straight (colors match the real machine)
 	{ "9.bin",			0x0800, 0x85866607, 3 | BRF_GRA },           // 10 Foreground Tiles
 	{ "10.bin",			0x0800, 0xa841d511, 3 | BRF_GRA },           // 11
 
-	{ "hm3-7611.bin",	0x0100, 0xe38eeb83, 4 | BRF_GRA },           // 12 Color Proms
-	{ "mb7052.ic41",	0x0100, 0x7a1bcb1e, 4 | BRF_GRA },           // 13
+	// proms borrowed from pleiads
+	{ "mb7052.ic41",	0x0100, 0x7a1bcb1e, 4 | BRF_GRA },           // 12 Color proms
+	{ "hm3-7611.bin",	0x0100, 0xe38eeb83, 4 | BRF_GRA },           // 13
 };
 
 STD_ROM_PICK(pleiadsn)
@@ -2353,6 +2512,42 @@ struct BurnDriver BurnDrvPleiadsn = {
 	NULL, NULL, NULL, NULL,
 	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_BOOTLEG | BDF_ORIENTATION_FLIPPED, 2, HARDWARE_MISC_PRE90S, GBF_SHOOT, 0,
 	NULL, pleiadsnRomInfo, pleiadsnRomName, NULL, NULL, NULL, NULL, PhoenixInputInfo, PleiadceDIPInfo,
+	PleiadsInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x100,
+	208, 256, 3, 4
+};
+
+
+// Pleiads (GMP Games)
+
+static struct BurnRomInfo pleiadsgmpRomDesc[] = {
+	{ "ic45",			0x0800, 0x6a6dcabf, 1 | BRF_PRG | BRF_ESS }, //  0 i8085 Code
+	{ "0.ic46",			0x0800, 0xc82557b4, 1 | BRF_PRG | BRF_ESS }, //  1
+	{ "3.ic47",			0x0800, 0x3b29aec5, 1 | BRF_PRG | BRF_ESS }, //  2
+	{ "4.ic48",			0x0800, 0x10df5159, 1 | BRF_PRG | BRF_ESS }, //  3
+	{ "1.ic49",			0x0800, 0x263576e7, 1 | BRF_PRG | BRF_ESS }, //  4
+	{ "2.ic50",			0x0800, 0xaa4d93ec, 1 | BRF_PRG | BRF_ESS }, //  5
+	{ "ic51",			0x0800, 0xb5f07fbc, 1 | BRF_PRG | BRF_ESS }, //  6
+	{ "8.ic52",			0x0800, 0xb3db08c2, 1 | BRF_PRG | BRF_ESS }, //  7
+
+	{ "ic24.bin",		0x0800, 0x5188fc29, 2 | BRF_GRA },           //  8 Background Tiles
+	{ "ic23.bin",		0x0800, 0x4e30f9e7, 2 | BRF_GRA },           //  9
+
+	{ "ic39.bin",		0x0800, 0x85866607, 3 | BRF_GRA },           // 10 Foreground Tiles
+	{ "ic40.bin",		0x0800, 0xa841d511, 3 | BRF_GRA },           // 11
+
+	{ "cpu41.bin",		0x0100, 0xe176b768, 4 | BRF_GRA },           // 12 Color Proms
+	{ "cpu40.bin",		0x0100, 0x79350b25, 4 | BRF_GRA },           // 13
+};
+
+STD_ROM_PICK(pleiadsgmp)
+STD_ROM_FN(pleiadsgmp)
+
+struct BurnDriver BurnDrvPleiadsgmp = {
+	"pleiadsgmp", "pleiads", NULL, NULL, "1981",
+	"Pleiads (GMP Games)\0", NULL, "bootleg (GMP Games)", "Miscellaneous",
+	NULL, NULL, NULL, NULL,
+	BDF_GAME_WORKING | BDF_CLONE | BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED | BDF_BOOTLEG | BDF_HISCORE_SUPPORTED, 2, HARDWARE_MISC_PRE90S, GBF_SHOOT, 0,
+	NULL, pleiadsgmpRomInfo, pleiadsgmpRomName, NULL, NULL, NULL, NULL, PhoenixInputInfo, PleiadceDIPInfo,
 	PleiadsInit, DrvExit, DrvFrame, DrvDraw, DrvScan, &DrvRecalc, 0x100,
 	208, 256, 3, 4
 };
